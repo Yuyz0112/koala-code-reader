@@ -90,7 +90,7 @@ app.get(
       basic: {
         repoName: "",
         mainGoal: "",
-        fileStructure: "",
+        files: [],
       },
       allSummaries: [],
       summariesBuffer: [],

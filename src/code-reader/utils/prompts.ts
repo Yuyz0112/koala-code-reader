@@ -1,4 +1,4 @@
-import { SharedStorage } from "./storage";
+import { SharedStorage, generateFileStructureWithStatus } from "./storage";
 
 export const getEntryFilePrompt = ({
   basic,
@@ -17,7 +17,7 @@ ${
 }
 
 File Structure:
-${basic.fileStructure}
+${generateFileStructureWithStatus(basic.files)}
 </AnalysisContext>
 
 <Task>
@@ -137,7 +137,7 @@ ${
 }
 
 File Structure:
-${basic.fileStructure}
+${generateFileStructureWithStatus(basic.files)}
 </AnalysisContext>
 
 <AnalysisHistory>
