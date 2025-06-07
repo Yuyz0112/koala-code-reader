@@ -2,8 +2,10 @@ import { Hono } from "hono";
 import { env } from "hono/adapter";
 import { createOpenAI } from "@ai-sdk/openai";
 import { upgradeWebSocket } from "hono/cloudflare-workers";
-import { flow } from "./code-reader/flow";
+import { createR2PersistedFlow, createPersistedFlow } from "./code-reader/flow";
 import { eventBus, SharedStorage } from "./code-reader/utils/storage";
+import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { PersistedFlow } from "./code-reader/persisted-flow";
 
 const app = new Hono();
 
@@ -34,7 +36,7 @@ app.get("/api/github/:owner/:repo", async (c) => {
     if (!repoResponse.ok) {
       return c.json(
         { error: `Repository not found: ${repoResponse.status}` },
-        repoResponse.status
+        repoResponse.status as ContentfulStatusCode
       );
     }
 
@@ -49,12 +51,18 @@ app.get("/api/github/:owner/:repo", async (c) => {
         {
           error: `Unable to fetch repository contents for ref '${ref}': ${treeResponse.status}. Please check if the branch/tag exists.`,
         },
-        treeResponse.status
+        treeResponse.status as ContentfulStatusCode
       );
     }
 
-    const repoData = await repoResponse.json();
-    const treeData = await treeResponse.json();
+    const repoData = await repoResponse.json<{
+      name: string;
+      full_name: string;
+      description: string | null;
+    }>();
+    const treeData = await treeResponse.json<{
+      tree: unknown;
+    }>();
 
     return c.json({
       name: repoData.name,
@@ -101,6 +109,9 @@ app.get(
       },
     };
 
+    // Store flow instance for this WebSocket connection
+    let currentFlow: PersistedFlow<SharedStorage> | null = null;
+
     return {
       onMessage(evt: any, ws: any) {
         try {
@@ -116,7 +127,37 @@ app.get(
 
               shared.basic = data.value;
 
-              flow.run(shared);
+              const environment = c.env as CloudflareBindings;
+              if (environment.FLOW_STORAGE_BUCKET) {
+                currentFlow = createR2PersistedFlow(
+                  environment.FLOW_STORAGE_BUCKET
+                );
+              } else {
+                // Fallback to in-memory storage for development
+                console.warn(
+                  "R2 bucket not configured, using in-memory storage"
+                );
+                const memoryKV = new Map();
+                const memoryKVStore = {
+                  read: async (key: string) => memoryKV.get(key),
+                  write: async (key: string, value: any) => {
+                    memoryKV.set(key, value);
+                  },
+                };
+                currentFlow = createPersistedFlow(memoryKVStore);
+              }
+
+              if (currentFlow) {
+                currentFlow.run(shared);
+              } else {
+                ws.send(
+                  JSON.stringify({
+                    type: "error",
+                    message: "Failed to initialize flow",
+                    timestamp: new Date().toISOString(),
+                  })
+                );
+              }
               break;
             }
             case "generateText": {

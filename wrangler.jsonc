@@ -3,7 +3,13 @@
   "name": "koala-code-reader",
   "main": "src/index.ts",
   "compatibility_date": "2025-05-22",
-  "assets": { "directory": "public" }
+  "assets": { "directory": "public" },
+  "r2_buckets": [
+    {
+      "binding": "FLOW_STORAGE_BUCKET",
+      "bucket_name": "koala-code-reader"
+    }
+  ]
   // "compatibility_flags": [
   //   "nodejs_compat"
   // ],
@@ -14,12 +20,6 @@
   //   {
   //     "binding": "MY_KV_NAMESPACE",
   //     "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-  //   }
-  // ],
-  // "r2_buckets": [
-  //   {
-  //     "binding": "MY_BUCKET",
-  //     "bucket_name": "my-bucket"
   //   }
   // ],
   // "d1_databases": [
