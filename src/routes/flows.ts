@@ -41,7 +41,6 @@ flows.post("/", async (c) => {
 
     const shared: SharedStorage = {
       basic,
-      allSummaries: [],
       summariesBuffer: [],
       reducedOutput: "",
       completed: false,
@@ -77,7 +76,6 @@ flows.post("/", async (c) => {
   }
 });
 
-// Get flow status and progress
 flows.get("/:runId", async (c) => {
   try {
     const { runId } = c.req.param();

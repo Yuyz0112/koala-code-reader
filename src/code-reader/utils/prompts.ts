@@ -1,4 +1,8 @@
-import { SharedStorage, generateFileStructureWithStatus } from "./storage";
+import {
+  SharedStorage,
+  generateFileStructureWithStatus,
+  getAnalyzedSummaries,
+} from "./storage";
 
 export const getEntryFilePrompt = ({
   basic,
@@ -65,13 +69,10 @@ export const analyzeFilePrompt = (
     nextFile,
     currentFile,
     userFeedback,
-    allSummaries,
-  }: Pick<
-    SharedStorage,
-    "basic" | "nextFile" | "currentFile" | "userFeedback" | "allSummaries"
-  >,
+  }: Pick<SharedStorage, "basic" | "nextFile" | "currentFile" | "userFeedback">,
   toAnalyzeContent: string
 ) => {
+  const allSummaries = getAnalyzedSummaries(basic.files);
   // Determine the analysis scenario based on userFeedback
   let analysisScenario = "";
   let instructions = "";
@@ -221,18 +222,15 @@ Analyze the file and provide your assessment:`;
 
 export const reduceHistoryPrompt = ({
   basic,
-  allSummaries,
   reducedOutput,
   summariesBuffer,
   userFeedback,
 }: Pick<
   SharedStorage,
-  | "basic"
-  | "allSummaries"
-  | "reducedOutput"
-  | "summariesBuffer"
-  | "userFeedback"
+  "basic" | "reducedOutput" | "summariesBuffer" | "userFeedback"
 >) => {
+  const allSummaries = getAnalyzedSummaries(basic.files);
+
   return `You are a code analysis assistant responsible for maintaining a consolidated understanding of a codebase analysis.
 
 <AnalysisContext>

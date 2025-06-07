@@ -6,6 +6,7 @@ export type FileItem = {
   path: string;
   status: FileStatus;
   type: "file" | "directory";
+  summary?: string; // Analysis summary for analyzed files
 };
 
 export type SharedStorage = {
@@ -46,11 +47,6 @@ export type SharedStorage = {
         userSummary: string;
         reason?: string;
       };
-
-  allSummaries: Array<{
-    filename: string;
-    summary: string;
-  }>;
 
   summariesBuffer: Array<{
     filename: string;
@@ -173,4 +169,17 @@ export function generateFileStructureWithStatus(files: FileItem[]): string {
 
   const result = renderNode(root);
   return result.join("\n");
+}
+
+// Helper function to extract analyzed summaries from files
+export function getAnalyzedSummaries(files: FileItem[]): Array<{
+  filename: string;
+  summary: string;
+}> {
+  return files
+    .filter((file) => file.status === "done" && file.summary)
+    .map((file) => ({
+      filename: file.path,
+      summary: file.summary!,
+    }));
 }

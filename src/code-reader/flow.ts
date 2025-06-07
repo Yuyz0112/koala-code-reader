@@ -68,15 +68,6 @@ export function createPersistedFlow(
   return new PersistedFlow<SharedStorage>(startNode, kvStore, runId);
 }
 
-// Create a flow with R2 backend
-export function createR2PersistedFlow(
-  r2: R2Bucket,
-  runId?: string
-): PersistedFlow<SharedStorage> {
-  const kvStore = new R2KVStore(r2);
-  return createPersistedFlow(kvStore, runId);
-}
-
 // Export the PersistedFlow class and related utilities
 export { PersistedFlow, type KVStore } from "./persisted-flow";
 export { R2KVStore } from "./utils/r2-kv-store";

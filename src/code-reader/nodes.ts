@@ -1,5 +1,5 @@
 import { Node } from "pocketflow";
-import { SharedStorage } from "./utils/storage";
+import { SharedStorage, getAnalyzedSummaries } from "./utils/storage";
 import { LLM } from "./utils/llm";
 import { readFileFromStorage } from "./utils/fs";
 
@@ -92,12 +92,7 @@ export class AnalyzeFileNode extends Node {
   ): Promise<
     Pick<
       SharedStorage,
-      | "basic"
-      | "nextFile"
-      | "currentFile"
-      | "userFeedback"
-      | "allSummaries"
-      | "__ctx"
+      "basic" | "nextFile" | "currentFile" | "userFeedback" | "__ctx"
     >
   > {
     return {
@@ -105,7 +100,6 @@ export class AnalyzeFileNode extends Node {
       nextFile: shared.nextFile,
       currentFile: shared.currentFile,
       userFeedback: shared.userFeedback,
-      allSummaries: shared.allSummaries,
       __ctx: shared.__ctx,
     };
   }
@@ -113,12 +107,7 @@ export class AnalyzeFileNode extends Node {
   async exec(
     prepRes: Pick<
       SharedStorage,
-      | "basic"
-      | "nextFile"
-      | "currentFile"
-      | "userFeedback"
-      | "allSummaries"
-      | "__ctx"
+      "basic" | "nextFile" | "currentFile" | "userFeedback" | "__ctx"
     >
   ): Promise<Pick<SharedStorage, "currentFile" | "nextFile"> | null> {
     const toAnalyzeContent = await readFileFromStorage(
@@ -198,7 +187,6 @@ export class ReduceHistoryNode extends Node {
   ): Promise<
     Pick<
       SharedStorage,
-      | "allSummaries"
       | "summariesBuffer"
       | "reducedOutput"
       | "currentFile"
@@ -209,7 +197,6 @@ export class ReduceHistoryNode extends Node {
     >
   > {
     return {
-      allSummaries: shared.allSummaries,
       summariesBuffer: shared.summariesBuffer,
       reducedOutput: shared.reducedOutput,
       currentFile: shared.currentFile,
@@ -223,7 +210,6 @@ export class ReduceHistoryNode extends Node {
   async exec(
     prepRes: Pick<
       SharedStorage,
-      | "allSummaries"
       | "summariesBuffer"
       | "reducedOutput"
       | "currentFile"
@@ -233,7 +219,9 @@ export class ReduceHistoryNode extends Node {
       | "__ctx"
     >
   ): Promise<
-    Pick<SharedStorage, "allSummaries" | "reducedOutput" | "summariesBuffer">
+    Pick<SharedStorage, "reducedOutput" | "summariesBuffer"> & {
+      updatedFiles: any[];
+    }
   > {
     // Step 1: Determine current summary based on user feedback
     let currentSummary = "";
@@ -247,56 +235,63 @@ export class ReduceHistoryNode extends Node {
       );
     }
 
-    // Step 2: Add current file & summary to allSummaries
-    const updatedAllSummaries = [...prepRes.allSummaries];
-    if (prepRes.currentFile?.name && currentSummary) {
-      updatedAllSummaries.push({
-        filename: prepRes.currentFile.name,
-        summary: currentSummary,
-      });
+    // Step 2: Update files with summary and add to summariesBuffer
+    const updatedFiles = [...prepRes.basic.files];
+    const currentFilePath = prepRes.currentFile?.name;
+
+    if (currentFilePath && currentSummary) {
+      // Find and update the file with summary and status
+      const fileIndex = updatedFiles.findIndex(
+        (f) => f.path === currentFilePath
+      );
+      if (fileIndex !== -1) {
+        updatedFiles[fileIndex] = {
+          ...updatedFiles[fileIndex],
+          summary: currentSummary,
+          status: "done" as const,
+        };
+      }
 
       prepRes.summariesBuffer.push({
-        filename: prepRes.currentFile.name,
+        filename: currentFilePath,
         summary: currentSummary,
       });
     }
 
     if (prepRes.summariesBuffer.length < 5 && !prepRes.completed) {
       return {
-        allSummaries: updatedAllSummaries,
         reducedOutput: prepRes.reducedOutput,
         summariesBuffer: prepRes.summariesBuffer,
+        updatedFiles,
       };
     }
 
     // Step 3: Use LLM to reduce history with new information
     const llm = new LLM(prepRes.__ctx.models);
     const { reduced_output } = await llm.reduceHistory({
-      basic: prepRes.basic,
-      allSummaries: updatedAllSummaries,
+      basic: { ...prepRes.basic, files: updatedFiles },
       reducedOutput: prepRes.reducedOutput,
       summariesBuffer: prepRes.summariesBuffer,
       userFeedback: prepRes.userFeedback,
     });
 
     return {
-      allSummaries: updatedAllSummaries,
       reducedOutput: reduced_output,
       summariesBuffer: [],
+      updatedFiles,
     };
   }
 
   async post(
     shared: SharedStorage,
     _: unknown,
-    execRes: Pick<
-      SharedStorage,
-      "allSummaries" | "reducedOutput" | "summariesBuffer"
-    >
+    execRes: Pick<SharedStorage, "reducedOutput" | "summariesBuffer"> & {
+      updatedFiles: any[];
+    }
   ): Promise<string | undefined> {
     shared.reducedOutput = execRes.reducedOutput;
-    shared.allSummaries = execRes.allSummaries;
     shared.summariesBuffer = execRes.summariesBuffer;
+    shared.basic.files = execRes.updatedFiles;
 
     if (shared.completed) {
       return Actions.ALL_FILES_ANALYZED;

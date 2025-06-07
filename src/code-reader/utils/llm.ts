@@ -4,7 +4,7 @@ import {
   analyzeFilePrompt,
   reduceHistoryPrompt,
 } from "./prompts";
-import { SharedStorage } from "./storage";
+import { SharedStorage, getAnalyzedSummaries } from "./storage";
 import { generateText } from "ai";
 
 function parseMessageToYaml<T = any>(input: string): T {
@@ -53,7 +53,7 @@ export class LLM {
   async analyzeFile(
     params: Pick<
       SharedStorage,
-      "basic" | "nextFile" | "currentFile" | "userFeedback" | "allSummaries"
+      "basic" | "nextFile" | "currentFile" | "userFeedback"
     >,
     toAnalyzeContent: string
   ) {
@@ -85,11 +85,7 @@ export class LLM {
   async reduceHistory(
     params: Pick<
       SharedStorage,
-      | "basic"
-      | "allSummaries"
-      | "reducedOutput"
-      | "summariesBuffer"
-      | "userFeedback"
+      "basic" | "reducedOutput" | "summariesBuffer" | "userFeedback"
     >
   ) {
     const prompt = reduceHistoryPrompt(params);
