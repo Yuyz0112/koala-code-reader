@@ -9,7 +9,6 @@ interface InteractionPanelProps {
   requestType: RequestType;
   requestData: any;
   onSendResponse: (response: any) => void;
-  onClearRequest: () => void;
   disabled?: boolean;
 }
 
@@ -17,7 +16,6 @@ export function InteractionPanel({
   requestType,
   requestData,
   onSendResponse,
-  onClearRequest,
   disabled = false,
 }: InteractionPanelProps) {
   const [response, setResponse] = useState("");
@@ -31,7 +29,6 @@ export function InteractionPanel({
         originalData: requestData,
       });
       setResponse("");
-      onClearRequest();
     }
   };
 
@@ -40,7 +37,6 @@ export function InteractionPanel({
       type: "continue",
       originalData: requestData,
     });
-    onClearRequest();
   };
 
   if (!requestType) {
@@ -55,6 +51,8 @@ export function InteractionPanel({
         return "AI Question - Feedback Needed";
       case "analysis_complete":
         return "Analysis Complete";
+      case "finish":
+        return "Analysis Complete";
       default:
         return "User Interaction Required";
     }
@@ -68,6 +66,8 @@ export function InteractionPanel({
         return "The AI has a question about the analysis and needs your input.";
       case "analysis_complete":
         return "The analysis has been completed. You can review the results or provide additional feedback.";
+      case "finish":
+        return "The analysis has been completed successfully. You can review the results.";
       default:
         return "Please provide the requested information.";
     }
@@ -115,7 +115,7 @@ export function InteractionPanel({
               value={response}
               onChange={(e) => setResponse(e.target.value)}
               placeholder={
-                requestType === "analysis_complete"
+                requestType === "analysis_complete" || requestType === "finish"
                   ? "Any additional feedback or questions? (optional)"
                   : "Please provide your response..."
               }
@@ -129,25 +129,17 @@ export function InteractionPanel({
               Send Response
             </Button>
 
-            {requestType === "analysis_complete" && (
+            {(requestType === "analysis_complete" ||
+              requestType === "finish") && (
               <Button
                 type="button"
                 variant="outline"
                 onClick={handleContinue}
                 disabled={disabled}
               >
-                Continue Analysis
+                {requestType === "finish" ? "Acknowledge" : "Continue Analysis"}
               </Button>
             )}
-
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={onClearRequest}
-              disabled={disabled}
-            >
-              Dismiss
-            </Button>
           </div>
         </form>
       </CardContent>

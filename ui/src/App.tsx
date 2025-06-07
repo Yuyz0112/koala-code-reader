@@ -1,7 +1,6 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { useFlowAPI } from "@/hooks/use-flow-api";
 import { RepoSetupForm } from "@/components/RepoSetupForm";
 import { MessagesPanel } from "@/components/MessagesPanel";
 import { InteractionPanel } from "@/components/InteractionPanel";
@@ -11,116 +10,75 @@ import { RepoSetup, AnalysisData } from "@/types";
 
 function App() {
   const [analysisData, setAnalysisData] = useState<AnalysisData>({
-    allSummaries: [],
+    fileSummaries: [],
     reducedOutput: "",
   });
 
   const { toast } = useToast();
 
   const {
-    status,
     messages,
     analysisStarted,
     currentRequestType,
     currentRequestData,
-    connect,
-    disconnect,
-    sendMessage,
-    setCurrentRequestType,
-    addMessage,
-  } = useWebSocket();
+    flowStatus,
+    startAnalysis,
+    fetchRepo,
+    handleUserInteraction,
+  } = useFlowAPI();
 
-  const handleConnect = () => {
-    connect();
-  };
+  // Update analysis data when flow status changes
+  useEffect(() => {
+    if (flowStatus) {
+      // Extract file summaries from basic.files array
+      const fileSummaries =
+        flowStatus.basic?.files
+          ?.filter((file) => file.summary) // Only include files with summaries
+          .map((file) => ({
+            filename: file.path,
+            summary: file.summary!,
+          })) || [];
 
-  const handleDisconnect = () => {
-    disconnect();
-    setAnalysisData({ allSummaries: [], reducedOutput: "" });
-  };
+      setAnalysisData({
+        fileSummaries,
+        reducedOutput: flowStatus.reducedOutput || "",
+      });
+    }
+  }, [flowStatus]);
 
-  const handleRepoSubmit = (repoData: RepoSetup) => {
-    if (status !== "connected") {
+  const handleRepoSubmit = async (repoData: RepoSetup) => {
+    const result = await startAnalysis(repoData);
+
+    if (result.success) {
       toast({
-        title: "Connection Required",
-        description: "Please connect to the server first.",
+        title: "Analysis Started",
+        description: "Repository analysis has been initiated.",
+      });
+    } else {
+      toast({
+        title: "Analysis Failed",
+        description: result.error || "Failed to start analysis",
         variant: "destructive",
       });
-      return;
     }
-
-    sendMessage({
-      type: "start_analysis",
-      data: repoData,
-    });
-
-    toast({
-      title: "Analysis Started",
-      description: "Repository analysis has been initiated.",
-    });
   };
 
   const handleFetchRepo = async (repoUrl: string, ref: string) => {
-    try {
-      // Extract owner and repo from GitHub URL
-      const match = repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
-      if (!match) {
-        toast({
-          title: "Invalid URL",
-          description: "Please provide a valid GitHub repository URL.",
-          variant: "destructive",
-        });
-        return;
-      }
+    const result = await fetchRepo(repoUrl, ref);
 
-      const [, owner, repo] = match;
-      const cleanRepo = repo.replace(/\.git$/, "");
-
-      const apiUrl = `/api/github/${owner}/${cleanRepo}?ref=${ref}`;
-      const response = await fetch(apiUrl);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch repository: ${response.status}`);
-      }
-
-      await response.json();
-
-      // Update the file structure in the form
-      addMessage(`✅ Repository structure fetched for ${owner}/${cleanRepo}`);
-
+    if (result.success) {
       toast({
         title: "Repository Fetched",
-        description: `Successfully fetched structure for ${owner}/${cleanRepo}`,
+        description: "Successfully fetched repository structure",
       });
-    } catch (error) {
-      console.error("Error fetching repository:", error);
+    } else {
       toast({
         title: "Fetch Failed",
-        description:
-          error instanceof Error ? error.message : "Failed to fetch repository",
+        description: result.error || "Failed to fetch repository",
         variant: "destructive",
       });
     }
   };
-
-  const handleInteractionResponse = (response: any) => {
-    sendMessage({
-      type: "user_response",
-      data: response,
-    });
-
-    toast({
-      title: "Response Sent",
-      description: "Your response has been sent to the AI.",
-    });
-  };
-
-  const handleClearRequest = () => {
-    setCurrentRequestType(null);
-  };
-
-  const isConnected = status === "connected";
-  const isConnecting = status === "connecting";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -135,14 +93,10 @@ function App() {
         </div>
 
         <div className="mb-4 flex gap-2">
-          {!isConnected ? (
-            <Button onClick={handleConnect} disabled={isConnecting}>
-              {isConnecting ? "Connecting..." : "Connect to Server"}
-            </Button>
-          ) : (
-            <Button variant="outline" onClick={handleDisconnect}>
-              Disconnect
-            </Button>
+          {analysisStarted ? null : (
+            <div className="text-sm text-gray-600">
+              Ready to start repository analysis
+            </div>
           )}
         </div>
 
@@ -151,9 +105,7 @@ function App() {
             <InteractionPanel
               requestType={currentRequestType}
               requestData={currentRequestData}
-              onSendResponse={handleInteractionResponse}
-              onClearRequest={handleClearRequest}
-              disabled={!isConnected}
+              onSendResponse={handleUserInteraction}
             />
           </div>
         )}
@@ -171,7 +123,7 @@ function App() {
                 <RepoSetupForm
                   onSubmit={handleRepoSubmit}
                   onFetchRepo={handleFetchRepo}
-                  disabled={!isConnected || analysisStarted}
+                  disabled={analysisStarted}
                 />
               </TabsContent>
 
@@ -199,19 +151,22 @@ function App() {
 
               <TabsContent value="summaries" className="space-y-4">
                 <div className="p-6 bg-white rounded-lg border">
-                  {analysisData.allSummaries.length > 0 ? (
+                  {analysisData.fileSummaries.length > 0 ? (
                     <div className="space-y-4">
                       <h3 className="text-lg font-semibold">
-                        File Summaries ({analysisData.allSummaries.length})
+                        File Summaries ({analysisData.fileSummaries.length})
                       </h3>
                       <div className="space-y-4">
-                        {analysisData.allSummaries.map((summary, index) => (
+                        {analysisData.fileSummaries.map((summary, index) => (
                           <div
                             key={index}
                             className="p-4 bg-gray-50 rounded-md"
                           >
-                            <pre className="whitespace-pre-wrap text-sm">
-                              {summary}
+                            <h4 className="font-medium text-sm text-gray-700 mb-2">
+                              {summary.filename}
+                            </h4>
+                            <pre className="whitespace-pre-wrap text-sm text-gray-600">
+                              {summary.summary}
                             </pre>
                           </div>
                         ))}
@@ -231,7 +186,7 @@ function App() {
           </div>
 
           <div className="lg:col-span-1">
-            <MessagesPanel messages={messages} status={status} />
+            <MessagesPanel messages={messages} />
           </div>
         </div>
       </div>
