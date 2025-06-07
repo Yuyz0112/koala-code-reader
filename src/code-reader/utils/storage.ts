@@ -61,6 +61,10 @@ export type SharedStorage = {
 
   completed: boolean;
 
+  // Call to action for UI to determine what user interaction is needed
+  // Only set by compute nodes, cleared by FlowManager
+  callToAction?: "improve_basic_input" | "user_feedback" | "finish" | null;
+
   __ctx: {
     models: {
       default: LanguageModelV1;
@@ -68,60 +72,6 @@ export type SharedStorage = {
   };
 };
 
-export type Listener<Payload> = (payload: Payload) => void;
-
-export class EventBus<Events extends Record<string, any>> {
-  private listeners: {
-    [K in keyof Events]?: Set<Listener<Events[K]>>;
-  } = {};
-
-  on<K extends keyof Events>(
-    event: K,
-    listener: Listener<Events[K]>
-  ): () => void {
-    (this.listeners[event] ??= new Set()).add(listener);
-    return () => this.off(event, listener);
-  }
-
-  once<K extends keyof Events>(
-    event: K,
-    listener: Listener<Events[K]>
-  ): () => void {
-    const wrapper: Listener<Events[K]> = (payload) => {
-      this.off(event, wrapper);
-      listener(payload);
-    };
-    return this.on(event, wrapper);
-  }
-
-  off<K extends keyof Events>(event: K, listener: Listener<Events[K]>): void {
-    this.listeners[event]?.delete(listener);
-    if (this.listeners[event]?.size === 0) delete this.listeners[event];
-  }
-
-  emit<K extends keyof Events>(event: K, payload: Events[K]): void {
-    const snapshot = this.listeners[event] ? [...this.listeners[event]!] : [];
-    for (const l of snapshot) l(payload);
-  }
-
-  clear(): void {
-    this.listeners = {};
-  }
-}
-
-export const eventBus = new EventBus<{
-  send: string;
-  generateText: string;
-  readFile: string;
-  improveBasicInput: string;
-  userFeedback: string;
-}>();
-
-/**
- * Dynamically generate a file structure with status based on files array
- * Uses markdown checkbox syntax and supports hierarchical display
- * Handles flat file structures with proper path aggregation and sorting
- */
 export function generateFileStructureWithStatus(files: FileItem[]): string {
   if (!files || files.length === 0) {
     return "No files available";

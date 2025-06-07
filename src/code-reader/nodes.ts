@@ -1,18 +1,15 @@
 import { Node } from "pocketflow";
-import { SharedStorage, eventBus } from "./utils/storage";
+import { SharedStorage } from "./utils/storage";
 import { LLM } from "./utils/llm";
 import { readFileFromStorage } from "./utils/fs";
-import {
-  finishFlow,
-  getImproveBasicInput,
-  getUserFeedback,
-} from "./utils/feedback";
 
 export enum Actions {
   IMPROVE_BASIC_INPUT = "improveBasicInput",
-  DO_ANALYZE = "doAnalyze",
+  WAITING_FOR_BASIC_INPUT_IMPROVEMENT = "waitingForBasicInputImprovement",
   GET_ENTRY_FILE = "getEntryFile",
+  DO_ANALYZE = "doAnalyze",
   ASK_USER_FEEDBACK = "askUserFeedback",
+  WAITING_FOR_USER_FEEDBACK = "waitingForUserFeedback",
   DO_REDUCE = "doReduce",
   ALL_FILES_ANALYZED = "allFilesAnalyzed",
 }
@@ -71,27 +68,17 @@ export class ImproveBasicInputNode extends Node {
     super(maxRetries);
   }
 
-  async prep(shared: SharedStorage): Promise<Pick<SharedStorage, "basic">> {
-    return {
-      basic: shared.basic,
-    };
-  }
-
-  async exec(
-    prepRes: Pick<SharedStorage, "basic">
-  ): Promise<Pick<SharedStorage, "basic">> {
-    return await getImproveBasicInput(prepRes);
-  }
-
   async post(
     shared: SharedStorage,
     _: unknown,
-    execRes: Pick<SharedStorage, "basic">
+    __: void
   ): Promise<string | undefined> {
-    shared.basic = execRes.basic;
-    delete shared.basic.askUser; // remove askUser after improving input
+    // Set call to action for UI to detect that user input is needed
+    // Flow will pause here, waiting for user to provide improved input via API
+    shared.callToAction = "improve_basic_input";
 
-    return Actions.GET_ENTRY_FILE;
+    // Return waiting action - this will cause flow to pause
+    return Actions.WAITING_FOR_BASIC_INPUT_IMPROVEMENT;
   }
 }
 
@@ -178,29 +165,6 @@ export class AnalyzeFileNode extends Node {
     shared.currentFile = execRes.currentFile;
     shared.nextFile = execRes.nextFile;
 
-    // Read the file content to send to frontend
-    const toAnalyzeContent = await readFileFromStorage(
-      (shared.userFeedback?.action === "reject"
-        ? shared.currentFile?.name
-        : shared.nextFile?.name) || "",
-      shared
-    );
-
-    // Push content update to frontend
-    eventBus.emit(
-      "send",
-      JSON.stringify({
-        type: "contentUpdate",
-        value: {
-          currentFile: shared.currentFile,
-          nextFile: shared.nextFile,
-          toAnalyzeContent: toAnalyzeContent,
-          allSummaries: shared.allSummaries,
-          reducedOutput: shared.reducedOutput,
-        },
-      })
-    );
-
     return Actions.ASK_USER_FEEDBACK;
   }
 }
@@ -210,33 +174,17 @@ export class UserFeedbackNode extends Node {
     super(maxRetries);
   }
 
-  async prep(
-    shared: SharedStorage
-  ): Promise<Pick<SharedStorage, "currentFile" | "nextFile">> {
-    return {
-      currentFile: shared.currentFile,
-      nextFile: shared.nextFile,
-    };
-  }
-
-  async exec(
-    prepRes: Pick<SharedStorage, "currentFile" | "nextFile">
-  ): Promise<Pick<SharedStorage, "userFeedback">> {
-    return await getUserFeedback(prepRes);
-  }
-
   async post(
     shared: SharedStorage,
     _: unknown,
-    execRes: Pick<SharedStorage, "userFeedback">
+    __: void
   ): Promise<string | undefined> {
-    shared.userFeedback = execRes.userFeedback;
+    // Set call to action for UI to detect that user feedback is needed
+    // Flow will pause here, waiting for user to provide feedback via API
+    shared.callToAction = "user_feedback";
 
-    if (execRes.userFeedback?.action === "reject") {
-      return Actions.DO_ANALYZE;
-    }
-
-    return Actions.DO_REDUCE;
+    // Return waiting action - this will cause flow to pause
+    return Actions.WAITING_FOR_USER_FEEDBACK;
   }
 }
 
@@ -350,20 +298,6 @@ export class ReduceHistoryNode extends Node {
     shared.allSummaries = execRes.allSummaries;
     shared.summariesBuffer = execRes.summariesBuffer;
 
-    // Push content update to frontend (no toAnalyzeContent for reduce node)
-    eventBus.emit(
-      "send",
-      JSON.stringify({
-        type: "contentUpdate",
-        value: {
-          currentFile: shared.currentFile,
-          nextFile: shared.nextFile,
-          allSummaries: shared.allSummaries,
-          reducedOutput: shared.reducedOutput,
-        },
-      })
-    );
-
     if (shared.completed) {
       return Actions.ALL_FILES_ANALYZED;
     }
@@ -377,20 +311,20 @@ export class FinishNode extends Node {
     super(maxRetries);
   }
 
-  async prep(
-    shared: SharedStorage
-  ): Promise<Pick<SharedStorage, "allSummaries" | "reducedOutput">> {
-    return {
-      allSummaries: shared.allSummaries,
-      reducedOutput: shared.reducedOutput,
-    };
-  }
-
-  async exec(
-    prepRes: Pick<SharedStorage, "allSummaries" | "reducedOutput">
-  ): Promise<void> {
-    finishFlow();
+  async post(
+    shared: SharedStorage,
+    _: unknown,
+    __: void
+  ): Promise<string | undefined> {
+    // Set callToAction to indicate the flow is finished and ready for final client interaction
+    shared.callToAction = "finish";
     return;
+  }
+}
+
+export class WaitingForBasicInputImprovementNode extends Node {
+  constructor(maxRetries?: number) {
+    super(maxRetries);
   }
 
   async post(
@@ -398,6 +332,35 @@ export class FinishNode extends Node {
     _: unknown,
     __: void
   ): Promise<string | undefined> {
-    return;
+    // User input has been processed by FlowManager, callToAction has been cleared
+    // Remove askUser flag since input has been improved
+    if (shared.basic.askUser) {
+      delete shared.basic.askUser;
+    }
+
+    // FlowManager already cleared callToAction, just proceed to next step
+    return Actions.GET_ENTRY_FILE;
+  }
+}
+
+export class WaitingForUserFeedbackNode extends Node {
+  constructor(maxRetries?: number) {
+    super(maxRetries);
+  }
+
+  async post(
+    shared: SharedStorage,
+    _: unknown,
+    __: void
+  ): Promise<string | undefined> {
+    // User input has been processed by FlowManager, callToAction has been cleared
+    // FlowManager already cleared callToAction, just proceed based on user feedback
+
+    // Determine next flow step based on feedback type
+    if (shared.userFeedback?.action === "reject") {
+      return Actions.DO_ANALYZE;
+    }
+
+    return Actions.DO_REDUCE;
   }
 }

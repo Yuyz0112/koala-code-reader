@@ -4,8 +4,8 @@ import {
   analyzeFilePrompt,
   reduceHistoryPrompt,
 } from "./prompts";
-import { eventBus, SharedStorage } from "./storage";
-import { generateText as _generateText } from "ai";
+import { SharedStorage } from "./storage";
+import { generateText } from "ai";
 
 function parseMessageToYaml<T = any>(input: string): T {
   const yamlCodeBlockRegex = /```(?:ya?ml)\s*\n([\s\S]*?)\n```/gi;
@@ -24,28 +24,6 @@ function parseMessageToYaml<T = any>(input: string): T {
     throw new Error("Failed to parse YAML: " + error + "\n\n" + yamlString);
   }
 }
-
-const generateText: typeof _generateText = async (params) => {
-  if (false) {
-    return new Promise((resolve) => {
-      eventBus.once("generateText", (data) => {
-        resolve({
-          text: data,
-        } as any);
-      });
-
-      eventBus.emit(
-        "send",
-        JSON.stringify({
-          type: "generateText",
-          value: params.prompt,
-        })
-      );
-    });
-  }
-
-  return _generateText(params);
-};
 
 export class LLM {
   models: SharedStorage["__ctx"]["models"];

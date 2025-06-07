@@ -1,0 +1,174 @@
+import { Hono } from "hono";
+import { env } from "hono/adapter";
+import { createOpenAI } from "@ai-sdk/openai";
+import { FlowManager } from "../code-reader/flow-manager";
+import type { SharedStorage } from "../code-reader/utils/storage";
+import { R2KVStore } from "../code-reader/flow";
+
+const flows = new Hono();
+
+// Helper function to create KV store
+async function createKVStore(environment: CloudflareBindings) {
+  if (!environment.FLOW_STORAGE_BUCKET) {
+    throw new Error(
+      "FLOW_STORAGE_BUCKET is required for persistent flow storage"
+    );
+  }
+
+  return new R2KVStore(environment.FLOW_STORAGE_BUCKET);
+}
+
+// Create a new flow
+flows.post("/", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { basic, runId } = body;
+
+    if (!basic || !basic.repoName || !basic.mainGoal) {
+      return c.json(
+        { error: "Missing required fields: repoName and mainGoal" },
+        400
+      );
+    }
+
+    // Initialize models
+    const models = {
+      default: createOpenAI({
+        apiKey: env(c).OPENAI_API_KEY as string,
+        baseURL: `https://clear-robin-12.deno.dev/v1`,
+      })("gpt-4o"),
+    };
+
+    const shared: SharedStorage = {
+      basic,
+      allSummaries: [],
+      summariesBuffer: [],
+      reducedOutput: "",
+      completed: false,
+      __ctx: {
+        models,
+      },
+    };
+
+    // Get KV store
+    const kvStore = await createKVStore(c.env as CloudflareBindings);
+
+    const flowRunId = runId || crypto.randomUUID();
+
+    // Initialize flow
+    const result = await FlowManager.initializeFlow(kvStore, flowRunId, shared);
+
+    if (!result.success) {
+      return c.json({ error: "Failed to initialize flow" }, 500);
+    }
+
+    // Trigger flow execution in background
+    FlowManager.triggerFlow(kvStore, flowRunId).catch((error) => {
+      console.error("Background flow execution error:", error);
+    });
+
+    return c.json({
+      runId: flowRunId,
+      status: "started",
+      message: "Flow has been started successfully",
+    });
+  } catch (error: any) {
+    return c.json({ error: `Failed to create flow: ${error.message}` }, 500);
+  }
+});
+
+// Get flow status and progress
+flows.get("/:runId", async (c) => {
+  try {
+    const { runId } = c.req.param();
+
+    const kvStore = await createKVStore(c.env as CloudflareBindings);
+
+    const result = await FlowManager.getFlowById(kvStore, runId);
+    if (!result.exists || !result.shared) {
+      return c.json({ error: "Flow not found" }, 404);
+    }
+
+    // Trigger flow execution in background (self-healing)
+    FlowManager.triggerFlow(kvStore, runId).catch((error) => {
+      console.error("Background flow trigger error:", error);
+    });
+
+    return c.json({
+      runId,
+      shared: result.shared,
+    });
+  } catch (error: any) {
+    return c.json(
+      { error: `Failed to get flow status: ${error.message}` },
+      500
+    );
+  }
+});
+
+// Submit user input to a waiting flow
+flows.post("/:runId/input", async (c) => {
+  try {
+    const { runId } = c.req.param();
+    const body = await c.req.json();
+    const { inputType, inputData } = body;
+
+    if (!inputType || !inputData) {
+      return c.json(
+        { error: "Missing required fields: inputType and inputData" },
+        400
+      );
+    }
+
+    const kvStore = await createKVStore(c.env as CloudflareBindings);
+
+    // Handle user input via FlowManager
+    const result = await FlowManager.handleUserInput(
+      kvStore,
+      runId,
+      inputType,
+      inputData
+    );
+
+    if (!result.success) {
+      return c.json({ error: result.message }, 400);
+    }
+
+    return c.json({
+      runId,
+      status: "resumed",
+      message: result.message,
+    });
+  } catch (error: any) {
+    return c.json(
+      { error: `Failed to submit user input: ${error.message}` },
+      500
+    );
+  }
+});
+
+// Delete a flow
+flows.delete("/:runId", async (c) => {
+  try {
+    const { runId } = c.req.param();
+
+    const kvStore = await createKVStore(c.env as CloudflareBindings);
+
+    // Delete flow via FlowManager
+    const result = await FlowManager.deleteFlow(kvStore, runId);
+
+    if (!result.success) {
+      return c.json({ error: result.message }, 500);
+    }
+
+    return c.json({
+      runId,
+      status: "deleted",
+      message: result.message,
+    });
+  } catch (error: any) {
+    return c.json({ error: `Failed to delete flow: ${error.message}` }, 500);
+  }
+});
+
+export { flows };
