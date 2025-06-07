@@ -1,5 +1,5 @@
 import { Node } from "pocketflow";
-import { SharedStorage, getAnalyzedSummaries } from "./utils/storage";
+import { SharedStorage } from "./utils/storage";
 import { LLM } from "./utils/llm";
 import { readFileFromStorage } from "./utils/fs";
 
@@ -109,13 +109,37 @@ export class AnalyzeFileNode extends Node {
       SharedStorage,
       "basic" | "nextFile" | "currentFile" | "userFeedback" | "__ctx"
     >
-  ): Promise<Pick<SharedStorage, "currentFile" | "nextFile"> | null> {
-    const toAnalyzeContent = await readFileFromStorage(
-      (prepRes.userFeedback?.action === "reject"
-        ? prepRes.currentFile?.name
-        : prepRes.nextFile?.name) || "",
-      prepRes
-    );
+  ): Promise<Pick<SharedStorage, "currentFile" | "nextFile"> | null | { needsRegeneration: true; reason: string }> {
+    const targetFileName = prepRes.userFeedback?.action === "reject"
+      ? prepRes.currentFile?.name
+      : prepRes.nextFile?.name;
+
+    if (!targetFileName) {
+      throw new Error("No file specified for analysis");
+    }
+
+    // Check if the target file exists in shared.files
+    const targetFileExists = prepRes.basic.files.some(file => file.path === targetFileName);
+    if (!targetFileExists) {
+      // File doesn't exist in shared.files, need to regenerate
+      return { 
+        needsRegeneration: true, 
+        reason: "File not found in available files, requesting regeneration" 
+      };
+    }
+
+    // Check if the file has already been analyzed (status is "done")
+    const targetFile = prepRes.basic.files.find(file => file.path === targetFileName);
+    if (targetFile?.status === "done" && targetFile.summary) {
+      // File already analyzed, need to regenerate to select a different file
+      return { 
+        needsRegeneration: true, 
+        reason: "File has already been analyzed, please select a different file" 
+      };
+    }
+
+    // File exists but not analyzed yet, proceed with analysis
+    const toAnalyzeContent = await readFileFromStorage(targetFileName, prepRes);
 
     const llm = new LLM(prepRes.__ctx.models);
     const result = await llm.analyzeFile(prepRes, toAnalyzeContent);
@@ -143,12 +167,21 @@ export class AnalyzeFileNode extends Node {
   async post(
     shared: SharedStorage,
     _: unknown,
-    execRes: Pick<SharedStorage, "currentFile" | "nextFile"> | null
+    execRes: Pick<SharedStorage, "currentFile" | "nextFile"> | null | { needsRegeneration: true; reason: string }
   ): Promise<string | undefined> {
     if (!execRes) {
       shared.completed = true;
       // all files analyzed, let reduce node check buffered summaries
       return Actions.DO_REDUCE;
+    }
+
+    if ("needsRegeneration" in execRes) {
+      // File doesn't exist or already analyzed, treat as user feedback reject to regenerate
+      shared.userFeedback = {
+        action: "reject",
+        reason: execRes.reason,
+      };
+      return Actions.DO_ANALYZE;
     }
 
     shared.currentFile = execRes.currentFile;
