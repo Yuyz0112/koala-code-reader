@@ -1,0 +1,149 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { RepoSetup } from "@/types";
+
+interface RepoSetupFormProps {
+  onSubmit: (data: RepoSetup) => void;
+  onFetchRepo: (repoUrl: string, ref: string) => void;
+  disabled?: boolean;
+}
+
+export function RepoSetupForm({
+  onSubmit,
+  onFetchRepo,
+  disabled = false,
+}: RepoSetupFormProps) {
+  const [formData, setFormData] = useState<RepoSetup>({
+    githubRepo: "",
+    githubRef: "main",
+    repoName: "",
+    mainGoal: "",
+    specificAreas: "",
+    fileStructure: "",
+  });
+
+  const handleInputChange = (field: keyof RepoSetup, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  const handleFetchRepo = () => {
+    if (formData.githubRepo) {
+      onFetchRepo(formData.githubRepo, formData.githubRef);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Repository Setup</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="githubRepo">GitHub Repository URL</Label>
+              <Input
+                id="githubRepo"
+                value={formData.githubRepo}
+                onChange={(e) =>
+                  handleInputChange("githubRepo", e.target.value)
+                }
+                placeholder="https://github.com/owner/repo"
+                disabled={disabled}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="githubRef">Branch/Tag (optional)</Label>
+              <Input
+                id="githubRef"
+                value={formData.githubRef}
+                onChange={(e) => handleInputChange("githubRef", e.target.value)}
+                placeholder="main"
+                disabled={disabled}
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleFetchRepo}
+              disabled={disabled || !formData.githubRepo}
+            >
+              Fetch Repository Structure
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="repoName">Repository Name</Label>
+            <Input
+              id="repoName"
+              value={formData.repoName}
+              onChange={(e) => handleInputChange("repoName", e.target.value)}
+              placeholder="Enter a descriptive name for this repository"
+              disabled={disabled}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="mainGoal">Main Goal</Label>
+            <Textarea
+              id="mainGoal"
+              value={formData.mainGoal}
+              onChange={(e) => handleInputChange("mainGoal", e.target.value)}
+              placeholder="What do you want to understand about this codebase?"
+              disabled={disabled}
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="specificAreas">Specific Areas of Interest</Label>
+            <Textarea
+              id="specificAreas"
+              value={formData.specificAreas}
+              onChange={(e) =>
+                handleInputChange("specificAreas", e.target.value)
+              }
+              placeholder="Any specific files, directories, or functionality you want to focus on?"
+              disabled={disabled}
+              rows={3}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="fileStructure">File Structure</Label>
+            <Textarea
+              id="fileStructure"
+              value={formData.fileStructure}
+              onChange={(e) =>
+                handleInputChange("fileStructure", e.target.value)
+              }
+              placeholder="Paste the repository file structure here (will be auto-populated if you fetch)"
+              disabled={disabled}
+              rows={10}
+            />
+          </div>
+
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={disabled || !formData.repoName || !formData.mainGoal}
+          >
+            Start Analysis
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
