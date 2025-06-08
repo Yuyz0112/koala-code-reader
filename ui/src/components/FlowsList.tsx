@@ -52,7 +52,7 @@ export const FlowsList: React.FC<FlowsListProps> = ({
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Code Analysis Flows</h1>
+        <h1 className="text-2xl font-bold">Koala Code Reader</h1>
         <div className="flex gap-2">
           <Button onClick={onLoadFlows} disabled={isLoading} variant="outline">
             <RefreshCw
@@ -88,7 +88,10 @@ export const FlowsList: React.FC<FlowsListProps> = ({
 
       <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2">
         {flows.map((flow) => (
-          <Card key={flow.runId} className="transition-shadow hover:shadow-md h-fit">
+          <Card
+            key={flow.runId}
+            className="transition-shadow hover:shadow-md h-fit"
+          >
             <CardHeader className="pb-3">
               <div className="flex justify-between items-start gap-3">
                 <div className="space-y-1 flex-1 min-w-0">
@@ -96,8 +99,8 @@ export const FlowsList: React.FC<FlowsListProps> = ({
                     {flow.basic?.repoName || "Unknown Repository"}
                   </CardTitle>
                   <p className="text-sm text-gray-600 break-words">
-                    {flow.basic?.mainGoal && flow.basic.mainGoal.length > 80 
-                      ? `${flow.basic.mainGoal.substring(0, 80)}...` 
+                    {flow.basic?.mainGoal && flow.basic.mainGoal.length > 80
+                      ? `${flow.basic.mainGoal.substring(0, 80)}...`
                       : flow.basic?.mainGoal || "No goal specified"}
                   </p>
                   {flow.basic?.githubUrl && (
@@ -109,14 +112,18 @@ export const FlowsList: React.FC<FlowsListProps> = ({
                     >
                       <ExternalLink className="h-3 w-3 flex-shrink-0" />
                       <span className="truncate">
-                        {flow.basic.githubUrl.replace("https://github.com/", "")}
+                        {flow.basic.githubUrl.replace(
+                          "https://github.com/",
+                          ""
+                        )}
                       </span>
                     </a>
                   )}
                   {flow.basic?.specificAreas && (
                     <p className="text-xs text-gray-500 break-words">
-                      Focus: {flow.basic.specificAreas.length > 60 
-                        ? `${flow.basic.specificAreas.substring(0, 60)}...` 
+                      Focus:{" "}
+                      {flow.basic.specificAreas.length > 60
+                        ? `${flow.basic.specificAreas.substring(0, 60)}...`
                         : flow.basic.specificAreas}
                     </p>
                   )}

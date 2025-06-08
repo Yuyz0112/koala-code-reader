@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import { env } from "hono/adapter";
 import { createOpenAI } from "@ai-sdk/openai";
 import { FlowManager } from "../code-reader/flow-manager";
 import type { SharedStorage } from "../code-reader/utils/storage";
@@ -111,7 +110,7 @@ flows.get("/:runId", async (c) => {
     const kvStore = await createKVStore(c.env as CloudflareBindings);
     const models = createModels(c.env as CloudflareBindings);
 
-    const result = await FlowManager.getFlowById(kvStore, models, runId);
+    const result = await FlowManager.getFlowById(kvStore, runId);
     if (!result.exists || !result.shared) {
       return c.json({ error: "Flow not found" }, 404);
     }

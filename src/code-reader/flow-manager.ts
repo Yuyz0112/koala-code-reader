@@ -16,25 +16,6 @@ export class FlowManager {
   private static activeFlows = new Map<string, PersistedFlow<SharedStorage>>();
 
   /**
-   * Execute one step and return immediately (for synchronous API responses)
-   */
-  static async executeOneStep(
-    kv: KVStore,
-    models: ModelSet,
-    runId: string
-  ): Promise<boolean> {
-    const flow = await this.getOrAttachFlow(kv, models, runId);
-    if (!flow) return false;
-
-    const hasMore = await flow.step();
-
-    // Release flow object immediately after step
-    this.activeFlows.delete(runId);
-
-    return hasMore;
-  }
-
-  /**
    * Trigger flow execution in background (async)
    * This is the core "step to next call to action" logic
    */
@@ -43,24 +24,43 @@ export class FlowManager {
     models: ModelSet,
     runId: string
   ): Promise<void> {
+    console.log(`[FlowManager] triggerFlow called for runId: ${runId}`);
+    console.log(
+      `[FlowManager] Active flows in memory: ${this.activeFlows.size}`
+    );
+
     // Check if flow is already running in memory
     if (this.activeFlows.has(runId)) {
-      // Flow is already being processed, do nothing
+      console.log(
+        `[FlowManager] Flow ${runId} is already running in memory, skipping execution`
+      );
       return;
     }
 
     try {
+      console.log(`[FlowManager] Attempting to get or attach flow ${runId}`);
       const flow = await this.getOrAttachFlow(kv, models, runId);
-      if (!flow) return;
+      console.log({ flow });
+      if (!flow) {
+        console.log(`[FlowManager] Failed to get or attach flow ${runId}`);
+        return;
+      }
+
+      console.log(
+        `[FlowManager] Successfully attached flow ${runId}, checking current state`
+      );
 
       // First check if flow is already waiting for user input
       let shared = await flow.getShared();
+
       if (shared?.callToAction) {
         console.log(
-          `Flow ${runId} already paused at callToAction: ${shared.callToAction}`
+          `[FlowManager] Flow ${runId} already paused at callToAction: ${shared.callToAction}`
         );
         return; // Don't execute anything, just return
       }
+
+      console.log(`[FlowManager] Starting flow execution for ${runId}`);
 
       // Keep stepping until we hit a callToAction or flow completes
       while (await flow.step()) {
@@ -69,13 +69,17 @@ export class FlowManager {
         // Check if we've hit a user interaction point after this step
         if (shared?.callToAction) {
           console.log(
-            `Flow ${runId} paused at callToAction: ${shared.callToAction}`
+            `[FlowManager] Flow ${runId} paused at callToAction: ${shared.callToAction}`
           );
           break;
         }
       }
+
+      if (!shared?.callToAction) {
+        console.log(`[FlowManager] Flow ${runId} completed execution`);
+      }
     } catch (error) {
-      console.error(`Flow ${runId} execution error:`, error);
+      console.error(`[FlowManager] Flow ${runId} execution error:`, error);
     } finally {
       // Always release memory object
       this.activeFlows.delete(runId);
@@ -163,26 +167,29 @@ export class FlowManager {
 
   /**
    * Get flow by ID and return shared state (for API responses)
+   * Only reads existing flow data directly from KV storage
    */
   static async getFlowById(
     kv: KVStore,
-    models: ModelSet,
     runId: string
   ): Promise<{ shared: SharedStorage | null; exists: boolean }> {
     try {
-      const flow = await this.getOrAttachFlow(kv, models, runId);
-      if (!flow) {
+      // Read directly from storage
+      const flowKey = `flow:${runId}`;
+      const flowRecord = await kv.read<{
+        flowName: string;
+        params: Record<string, unknown>;
+        shared: SharedStorage;
+        createdAt: string;
+        nodes: Array<any>;
+      }>(flowKey);
+
+      if (!flowRecord) {
         return { shared: null, exists: false };
       }
 
-      const shared = await flow.getShared();
-
-      // Release flow object immediately after reading
-      this.activeFlows.delete(runId);
-
-      return { shared: shared || null, exists: true };
+      return { shared: flowRecord.shared || null, exists: true };
     } catch (error) {
-      console.error(`Failed to get flow ${runId}:`, error);
       return { shared: null, exists: false };
     }
   }
