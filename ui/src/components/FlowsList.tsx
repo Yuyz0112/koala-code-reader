@@ -86,7 +86,7 @@ export const FlowsList: React.FC<FlowsListProps> = ({
         </Card>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2">
+      <div className="container grid gap-4 sm:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2">
         {flows.map((flow) => (
           <Card
             key={flow.runId}

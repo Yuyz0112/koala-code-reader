@@ -184,6 +184,29 @@ export class FlowAPIClient {
 
     return response.json();
   }
+
+  /**
+   * Read file content from GitHub repository
+   */
+  async readFileFromGitHub(
+    owner: string,
+    repo: string,
+    filePath: string,
+    ref: string = "main"
+  ): Promise<{ content: string; path: string; ref: string; encoding: string }> {
+    const response = await fetch(
+      `${this.baseUrl}/api/github/${owner}/${repo}/contents/${filePath}?ref=${ref}`
+    );
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error(`File not found: ${filePath}`);
+      }
+      throw new Error(`Failed to read file: ${response.status}`);
+    }
+
+    return response.json();
+  }
 }
 
 // Export a default instance

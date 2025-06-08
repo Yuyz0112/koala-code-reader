@@ -3,7 +3,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { useFlowAPI } from "@/hooks/use-flow-api";
 import { RepoSetupForm } from "@/components/RepoSetupForm";
-import { MessagesPanel } from "@/components/MessagesPanel";
 import { InteractionPanel } from "@/components/InteractionPanel";
 import { FlowsList } from "@/components/FlowsList";
 import { Toaster } from "@/components/ui/toaster";
@@ -21,7 +20,6 @@ function App() {
   const { toast } = useToast();
 
   const {
-    messages,
     analysisStarted,
     currentRequestType,
     currentRequestData,
@@ -130,7 +128,7 @@ function App() {
   if (currentView === "list") {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="container mx-auto px-4 py-8">
+        <div className="mx-auto px-4 py-8">
           <FlowsList
             flows={flows}
             isLoading={isLoadingFlows}
@@ -147,7 +145,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+      <div className=" mx-auto px-4 py-8 h-screen flex flex-col">
         <div className="mb-4">
           <Button variant="outline" onClick={handleBackToList}>
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -155,31 +153,35 @@ function App() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
+          <div className="lg:col-span-2 h-full overflow-hidden">
             {analysisStarted ? null : (
-              <div className="mb-6">
-                <RepoSetupForm
-                  onSubmit={handleRepoSubmit}
-                  onFetchRepo={handleFetchRepo}
-                />
-              </div>
+              <RepoSetupForm
+                onSubmit={handleRepoSubmit}
+                onFetchRepo={handleFetchRepo}
+              />
             )}
 
-            <InteractionPanel
-              requestType={currentRequestType}
-              requestData={currentRequestData}
-              onSendResponse={handleUserInteraction}
-            />
-
-            <Tabs defaultValue="output" className="mt-6">
+            <Tabs defaultValue="current-file" className="flex flex-col h-full">
               <TabsList>
-                <TabsTrigger value="output">Analysis Output</TabsTrigger>
+                <TabsTrigger value="current-file">Current File</TabsTrigger>
+                <TabsTrigger value="output">Output</TabsTrigger>
                 <TabsTrigger value="summaries">File Summaries</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="output" className="space-y-4">
-                <div className="p-6 bg-white rounded-lg border">
+              <TabsContent value="current-file" className="flex-1 space-y-4">
+                <div className="p-6 bg-white rounded-lg border h-full">
+                  <div className="text-center py-12 text-gray-500">
+                    <p>Current file content will appear here.</p>
+                    <p className="text-sm">
+                      Select a file to view its content.
+                    </p>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="output" className="flex-1 space-y-4">
+                <div className="p-6 bg-white rounded-lg border h-full overflow-auto">
                   {analysisData.reducedOutput ? (
                     <div>
                       <h3 className="text-lg font-semibold mb-4">
@@ -200,8 +202,8 @@ function App() {
                 </div>
               </TabsContent>
 
-              <TabsContent value="summaries" className="space-y-4">
-                <div className="p-6 bg-white rounded-lg border">
+              <TabsContent value="summaries" className="flex-1 space-y-4">
+                <div className="p-6 bg-white rounded-lg border h-full overflow-auto">
                   {analysisData.fileSummaries.length > 0 ? (
                     <div className="space-y-4">
                       <h3 className="text-lg font-semibold">
@@ -236,8 +238,12 @@ function App() {
             </Tabs>
           </div>
 
-          <div className="lg:col-span-1">
-            <MessagesPanel messages={messages} />
+          <div className="lg:col-span-1 h-full overflow-hidden">
+            <InteractionPanel
+              requestType={currentRequestType}
+              requestData={currentRequestData}
+              onSendResponse={handleUserInteraction}
+            />
           </div>
         </div>
       </div>

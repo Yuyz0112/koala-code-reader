@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -9,22 +9,14 @@ interface MessagesPanelProps {
 export function MessagesPanel({ messages }: MessagesPanelProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
   return (
-    <Card className="h-full">
-      <CardHeader className="pb-3">
+    <Card className="h-full flex flex-col">
+      <CardHeader className="pb-3 flex-shrink-0">
         <CardTitle>Analysis Progress</CardTitle>
       </CardHeader>
-      <CardContent className="h-[calc(100%-80px)]">
-        <ScrollArea className="h-full w-full">
-          <div className="space-y-2">
+      <CardContent className="flex-1 min-h-0 p-0">
+        <ScrollArea className="h-full w-full px-6 pb-6">
+          <div className="space-y-2 pt-6">
             {messages.length === 0 ? (
               <div className="text-gray-500 text-center py-8">
                 No messages yet. Start an analysis to see progress here.

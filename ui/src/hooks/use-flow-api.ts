@@ -87,8 +87,7 @@ export const useFlowAPI = () => {
                   );
                   setCurrentRequestType("user_feedback");
                   setCurrentRequestData({
-                    message:
-                      "The AI needs your feedback to continue the analysis.",
+                    message: currentFile?.analysis?.summary,
                     currentFile: currentFile?.name,
                   });
                   break;
@@ -204,6 +203,39 @@ export const useFlowAPI = () => {
       }
     },
     [addMessage]
+  );
+
+  // Function to read file content from GitHub
+  const readFileFromGitHub = useCallback(
+    async (repoUrl: string, filePath: string, ref: string = "main") => {
+      try {
+        // Extract owner and repo from GitHub URL
+        const match = repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+        if (!match) {
+          return {
+            success: false,
+            error: "Please provide a valid GitHub repository URL.",
+          };
+        }
+
+        const [, owner, repo] = match;
+        const cleanRepo = repo.replace(/\.git$/, "");
+
+        const fileData = await apiClient.readFileFromGitHub(
+          owner,
+          cleanRepo,
+          filePath,
+          ref
+        );
+
+        return { success: true, fileData };
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to read file";
+        return { success: false, error: errorMessage };
+      }
+    },
+    []
   );
 
   // Main function to handle user interaction responses
@@ -356,6 +388,7 @@ export const useFlowAPI = () => {
     isLoadingFlows,
     startAnalysis,
     fetchRepo,
+    readFileFromGitHub,
     handleUserInteraction,
     loadFlows,
     deleteFlow,

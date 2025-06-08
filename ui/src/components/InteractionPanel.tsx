@@ -74,7 +74,7 @@ export function InteractionPanel({
   };
 
   return (
-    <Card className="border-orange-200 bg-orange-50">
+    <Card className="border-orange-200 bg-orange-50 h-full">
       <CardHeader>
         <CardTitle className="text-orange-800">{getTitle()}</CardTitle>
         <p className="text-sm text-orange-700">{getDescription()}</p>

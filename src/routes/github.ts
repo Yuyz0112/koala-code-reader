@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { env } from "hono/adapter";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { readFromGithub } from "../code-reader/utils/fs";
 
 const github = new Hono();
 
@@ -73,6 +74,39 @@ github.get("/:owner/:repo", async (c) => {
           error?.message || "Unknown error"
         }`,
       },
+      500
+    );
+  }
+});
+
+// New endpoint for reading file contents
+github.get("/:owner/:repo/contents/*", async (c) => {
+  const { owner, repo } = c.req.param();
+  const filePath = c.req.param("*") || ""; // Get the file path from the wildcard
+  const ref = c.req.query("ref") || "main";
+
+  try {
+    // Construct the GitHub URL
+    const githubUrl = `https://github.com/${owner}/${repo}`;
+
+    // Use the fs utility to read the file content
+    const content = await readFromGithub(githubUrl, filePath, ref);
+
+    return c.json({
+      content,
+      path: filePath,
+      ref,
+      encoding: "utf-8",
+    });
+  } catch (error: any) {
+    console.error("Error reading file from GitHub:", error);
+
+    if (error.message.includes("File not found")) {
+      return c.json({ error: `File not found: ${filePath}` }, 404);
+    }
+
+    return c.json(
+      { error: `Failed to read file: ${error.message || "Unknown error"}` },
       500
     );
   }
