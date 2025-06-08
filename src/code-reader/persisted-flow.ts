@@ -109,7 +109,7 @@ export class PersistedFlow<
     if (exists) return;
 
     const record: FlowRecord = {
-      flowName: this.constructor.name,
+      flowName: "koala-code-reader",
       params: this._params as Record<string, unknown>,
       shared: structuredClone(shared),
       createdAt: new Date().toISOString(),

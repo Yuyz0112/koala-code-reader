@@ -5,10 +5,24 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { RepoSetup } from "@/types";
+import { FileList } from "@/components/FileList";
 
 interface RepoSetupFormProps {
   onSubmit: (data: RepoSetup) => void;
-  onFetchRepo: (repoUrl: string, ref: string) => void;
+  onFetchRepo: (
+    repoUrl: string,
+    ref: string
+  ) => Promise<{
+    success: boolean;
+    error?: string;
+    repoData?: {
+      name: string;
+      tree: Array<{
+        path: string;
+        type: string;
+      }>;
+    };
+  }>;
   disabled?: boolean;
 }
 
@@ -23,11 +37,16 @@ export function RepoSetupForm({
     repoName: "",
     mainGoal: "",
     specificAreas: "",
-    fileStructure: "",
+    files: [],
   });
+  const [isFetching, setIsFetching] = useState(false);
 
   const handleInputChange = (field: keyof RepoSetup, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleFilesChange = (files: RepoSetup["files"]) => {
+    setFormData((prev) => ({ ...prev, files }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -35,9 +54,34 @@ export function RepoSetupForm({
     onSubmit(formData);
   };
 
-  const handleFetchRepo = () => {
+  const handleFetchRepo = async () => {
     if (formData.githubRepo) {
-      onFetchRepo(formData.githubRepo, formData.githubRef);
+      setIsFetching(true);
+      try {
+        const { repoData } = await onFetchRepo(
+          formData.githubRepo,
+          formData.githubRef
+        );
+        if (repoData) {
+          const files: RepoSetup["files"] = repoData.tree
+            .filter((v) => v.type === "blob")
+            .map((file) => ({
+              path: file.path,
+              type: "file",
+              status: "pending",
+            }));
+
+          setFormData((prev) => {
+            return {
+              ...prev,
+              files,
+              repoName: repoData.name || prev.repoName, // Use repo name if available
+            };
+          });
+        }
+      } finally {
+        setIsFetching(false);
+      }
     }
   };
 
@@ -78,9 +122,9 @@ export function RepoSetupForm({
               type="button"
               variant="outline"
               onClick={handleFetchRepo}
-              disabled={disabled || !formData.githubRepo}
+              disabled={disabled || !formData.githubRepo || isFetching}
             >
-              Fetch Repository Structure
+              {isFetching ? "Fetching..." : "Fetch Repository Structure"}
             </Button>
           </div>
 
@@ -122,17 +166,13 @@ export function RepoSetupForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="fileStructure">File Structure</Label>
-            <Textarea
-              id="fileStructure"
-              value={formData.fileStructure}
-              onChange={(e) =>
-                handleInputChange("fileStructure", e.target.value)
-              }
-              placeholder="Paste the repository file structure here (will be auto-populated if you fetch)"
-              disabled={disabled}
-              rows={10}
-            />
+            <Label htmlFor="files">Files</Label>
+            {formData.files.length > 0 && (
+              <FileList
+                files={formData.files}
+                onFilesChange={handleFilesChange}
+              />
+            )}
           </div>
 
           <Button

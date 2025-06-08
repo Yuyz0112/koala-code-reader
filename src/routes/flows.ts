@@ -26,7 +26,7 @@ flows.post("/", async (c) => {
 
     if (!basic || !basic.repoName || !basic.mainGoal) {
       return c.json(
-        { error: "Missing required fields: repoName and mainGoal" },
+        { error: "Missing required fields: repoName or mainGoal" },
         400
       );
     }

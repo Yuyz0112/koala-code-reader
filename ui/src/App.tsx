@@ -78,6 +78,8 @@ function App() {
         variant: "destructive",
       });
     }
+
+    return result;
   };
 
   return (

@@ -189,10 +189,10 @@ export const useFlowAPI = () => {
           `📥 Fetching repository structure for ${owner}/${cleanRepo}...`
         );
 
-        await apiClient.fetchGitHubRepo(owner, cleanRepo, ref);
+        const repoData = await apiClient.fetchGitHubRepo(owner, cleanRepo, ref);
 
         addMessage(`✅ Repository structure fetched for ${owner}/${cleanRepo}`);
-        return { success: true };
+        return { success: true, repoData };
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Failed to fetch repository";

@@ -30,12 +30,22 @@ export interface FlowAPIResponse {
   shared?: FlowStatus;
 }
 
+export type FileStatus = "pending" | "ignored" | "done";
+
+export interface FileItem {
+  path: string;
+  status: FileStatus;
+  type: "file" | "directory";
+  summary?: string; // Analysis summary for analyzed files
+}
+
 export interface StartAnalysisRequest {
   repoName: string;
   mainGoal: string;
   specificAreas: string;
   githubRepo: string;
   githubRef: string;
+  files: Array<FileItem>;
 }
 
 export interface UserInputRequest {
@@ -66,7 +76,7 @@ export class FlowAPIClient {
           specificAreas: data.specificAreas,
           githubUrl: data.githubRepo,
           githubRef: data.githubRef,
-          files: [], // Will be populated by the flow
+          files: data.files,
         },
       }),
     });

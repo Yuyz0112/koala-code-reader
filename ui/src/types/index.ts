@@ -1,3 +1,5 @@
+import { FileItem } from "@/lib/api-client";
+
 export interface AnalysisData {
   fileSummaries: Array<{
     filename: string;
@@ -12,7 +14,7 @@ export interface RepoSetup {
   repoName: string;
   mainGoal: string;
   specificAreas: string;
-  fileStructure: string;
+  files: FileItem[];
 }
 
 export type RequestType =
