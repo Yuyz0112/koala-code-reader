@@ -9,7 +9,20 @@
       "binding": "FLOW_STORAGE_BUCKET",
       "bucket_name": "koala-code-reader"
     }
-  ]
+  ],
+  "queues": {
+    "producers": [
+      {
+        "binding": "FLOW_QUEUE",
+        "queue": "flow-execution-queue"
+      }
+    ],
+    "consumers": [
+      {
+        "queue": "flow-execution-queue"
+      }
+    ]
+  }
   // "compatibility_flags": [
   //   "nodejs_compat"
   // ],

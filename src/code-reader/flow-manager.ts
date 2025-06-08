@@ -4,16 +4,47 @@ import { SharedStorage } from "./utils/storage";
 import type { KVStore } from "./persisted-flow";
 import { ModelSet } from "./utils/llm";
 
+export type FlowExecutionMessage = {
+  runId: string;
+  action: "trigger" | "resume";
+};
+
 /**
  * Flow Manager - handles flow lifecycle with memory optimization
  *
  * Core principles:
  * 1. Flow objects are created on-demand and released after execution
  * 2. Execution continues until reaching a callToAction (user interaction point)
- * 3. Any API call can trigger flow resumption
+ * 3. Background execution is handled through Cloudflare Queue for persistence
  */
 export class FlowManager {
   private static activeFlows = new Map<string, PersistedFlow<SharedStorage>>();
+
+  /**
+   * Queue a flow execution task (replaces direct async execution)
+   */
+  static async queueFlowExecution(
+    queue: Queue<FlowExecutionMessage & { timestamp: number }>,
+    message: FlowExecutionMessage
+  ): Promise<void> {
+    const { runId, action } = message;
+    console.log(
+      `[FlowManager] Queueing flow execution for runId: ${runId}, action: ${action}`
+    );
+
+    try {
+      await queue.send({ ...message, timestamp: Date.now() });
+      console.log(
+        `[FlowManager] Successfully queued flow execution for ${runId}`
+      );
+    } catch (error) {
+      console.error(
+        `[FlowManager] Failed to queue flow execution for ${runId}:`,
+        error
+      );
+      throw error;
+    }
+  }
 
   /**
    * Trigger flow execution in background (async)
@@ -87,11 +118,12 @@ export class FlowManager {
   }
 
   /**
-   * Handle user input and resume flow execution
+   * Handle user input and queue flow resumption
    */
   static async handleUserInput(
     kv: KVStore,
     models: ModelSet,
+    queue: Queue<FlowExecutionMessage>,
     runId: string,
     inputType: string,
     inputData: any
@@ -150,9 +182,10 @@ export class FlowManager {
       // Release flow object
       this.activeFlows.delete(runId);
 
-      // Trigger flow continuation in background
-      this.triggerFlow(kv, models, runId).catch((error) => {
-        console.error(`Failed to resume flow ${runId}:`, error);
+      // Queue flow continuation instead of direct async call
+      await this.queueFlowExecution(queue, {
+        runId,
+        action: "resume",
       });
 
       return { success: true, message: "User input processed successfully" };

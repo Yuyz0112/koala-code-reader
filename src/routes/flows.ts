@@ -88,10 +88,11 @@ flows.post("/", async (c) => {
       return c.json({ error: "Failed to initialize flow" }, 500);
     }
 
-    // Trigger flow execution in background
-    FlowManager.triggerFlow(kvStore, models, flowRunId).catch((error) => {
-      console.error("Background flow execution error:", error);
-    });
+    // Queue flow execution instead of direct async call
+    await FlowManager.queueFlowExecution(
+      (c.env as CloudflareBindings).FLOW_QUEUE,
+      { runId: flowRunId, action: "trigger" }
+    );
 
     return c.json({
       runId: flowRunId,
@@ -114,11 +115,6 @@ flows.get("/:runId", async (c) => {
     if (!result.exists || !result.shared) {
       return c.json({ error: "Flow not found" }, 404);
     }
-
-    // Trigger flow execution in background (self-healing)
-    FlowManager.triggerFlow(kvStore, models, runId).catch((error) => {
-      console.error("Background flow trigger error:", error);
-    });
 
     return c.json({
       runId,
@@ -153,6 +149,7 @@ flows.post("/:runId/input", async (c) => {
     const result = await FlowManager.handleUserInput(
       kvStore,
       models,
+      (c.env as CloudflareBindings).FLOW_QUEUE,
       runId,
       inputType,
       inputData
