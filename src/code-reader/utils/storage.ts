@@ -58,6 +58,10 @@ export type SharedStorage = {
   // Call to action for UI to determine what user interaction is needed
   // Only set by compute nodes, cleared by FlowManager
   callToAction?: "improve_basic_input" | "user_feedback" | "finish" | null;
+
+  // Heartbeat mechanism for flow execution lock
+  // Updated every 10 seconds during flow execution to prevent duplicate handlers
+  lastHeartbeat?: number; // Unix timestamp in milliseconds
 };
 
 export function generateFileStructureWithStatus(files: FileItem[]): string {

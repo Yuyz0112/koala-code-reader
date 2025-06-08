@@ -4,6 +4,11 @@ import { SharedStorage } from "./utils/storage";
 import type { KVStore } from "./persisted-flow";
 import { ModelSet } from "./utils/llm";
 
+// Heartbeat configuration constants
+const HEARTBEAT_INTERVAL = 10 * 1000; // 10 seconds
+const HEARTBEAT_TIMEOUT = 3 * HEARTBEAT_INTERVAL; // 30 seconds (3x interval)
+const ACTIVE_THRESHOLD = 2 * HEARTBEAT_INTERVAL; // 20 seconds
+
 export type FlowExecutionMessage = {
   runId: string;
   action: "trigger" | "resume";
@@ -19,6 +24,75 @@ export type FlowExecutionMessage = {
  */
 export class FlowManager {
   private static activeFlows = new Map<string, PersistedFlow<SharedStorage>>();
+  private static heartbeatIntervals = new Map<string, NodeJS.Timeout>();
+
+  /**
+   * Check if another handler is actively processing a flow based on heartbeat
+   */
+  private static isFlowActivelyProcessed(shared: SharedStorage): boolean {
+    if (!shared.lastHeartbeat) {
+      return false;
+    }
+
+    const now = Date.now();
+    const timeSinceLastHeartbeat = now - shared.lastHeartbeat;
+    return timeSinceLastHeartbeat < ACTIVE_THRESHOLD;
+  }
+
+  /**
+   * Check if a flow's heartbeat has expired (for self-healing)
+   */
+  private static isHeartbeatExpired(shared: SharedStorage): boolean {
+    if (!shared.lastHeartbeat) {
+      return true;
+    }
+
+    const now = Date.now();
+    const timeSinceLastHeartbeat = now - shared.lastHeartbeat;
+    return timeSinceLastHeartbeat > HEARTBEAT_TIMEOUT;
+  }
+
+  /**
+   * Start independent heartbeat updates for a flow
+   */
+  private static startHeartbeatUpdates(
+    flow: PersistedFlow<SharedStorage>,
+    runId: string
+  ): void {
+    // Clear any existing heartbeat interval
+    this.stopHeartbeatUpdates(runId);
+
+    const intervalId = setInterval(async () => {
+      try {
+        const shared = await flow.getShared();
+        if (shared) {
+          shared.lastHeartbeat = Date.now();
+          await flow.setShared(shared);
+          console.log(`[FlowManager] Heartbeat updated for flow ${runId}`);
+        }
+      } catch (error) {
+        console.error(
+          `[FlowManager] Failed to update heartbeat for flow ${runId}:`,
+          error
+        );
+        // Clear the interval on error to prevent further attempts
+        this.stopHeartbeatUpdates(runId);
+      }
+    }, HEARTBEAT_INTERVAL);
+
+    this.heartbeatIntervals.set(runId, intervalId);
+  }
+
+  /**
+   * Stop heartbeat updates for a flow
+   */
+  private static stopHeartbeatUpdates(runId: string): void {
+    const intervalId = this.heartbeatIntervals.get(runId);
+    if (intervalId) {
+      clearInterval(intervalId);
+      this.heartbeatIntervals.delete(runId);
+    }
+  }
 
   /**
    * Queue a flow execution task (replaces direct async execution)
@@ -91,7 +165,19 @@ export class FlowManager {
         return; // Don't execute anything, just return
       }
 
+      // Check if another handler is already actively processing this flow
+      if (shared && this.isFlowActivelyProcessed(shared)) {
+        const timeSinceLastHeartbeat = Date.now() - (shared.lastHeartbeat || 0);
+        console.log(
+          `[FlowManager] Flow ${runId} appears to be actively processed by another handler (heartbeat ${timeSinceLastHeartbeat}ms ago), skipping`
+        );
+        return;
+      }
+
       console.log(`[FlowManager] Starting flow execution for ${runId}`);
+
+      // Start independent heartbeat updates
+      this.startHeartbeatUpdates(flow, runId);
 
       // Keep stepping until we hit a callToAction or flow completes
       while (await flow.step()) {
@@ -112,7 +198,8 @@ export class FlowManager {
     } catch (error) {
       console.error(`[FlowManager] Flow ${runId} execution error:`, error);
     } finally {
-      // Always release memory object
+      // Always stop heartbeat updates and release memory object
+      this.stopHeartbeatUpdates(runId);
       this.activeFlows.delete(runId);
     }
   }
@@ -175,6 +262,9 @@ export class FlowManager {
 
       // Clear callToAction to indicate user input has been processed
       shared.callToAction = null;
+
+      // Update heartbeat when resuming flow after user input
+      shared.lastHeartbeat = Date.now();
 
       // Save updated state
       await flow.setShared(shared);
@@ -287,7 +377,8 @@ export class FlowManager {
     runId: string
   ): Promise<{ success: boolean; message: string }> {
     try {
-      // Remove from memory if exists
+      // Clean up heartbeat intervals and remove from memory if exists
+      this.stopHeartbeatUpdates(runId);
       this.activeFlows.delete(runId);
 
       // Delete the flow record from storage
@@ -374,6 +465,47 @@ export class FlowManager {
     } catch (error) {
       console.error("Failed to list flows:", error);
       return { success: false, flows: [] };
+    }
+  }
+
+  /**
+   * Check if a flow needs resumption and queue it (self-healing mechanism)
+   * This replaces the previous client-driven self-healing with queue-based approach
+   * Uses heartbeat mechanism to prevent duplicate flow handlers
+   */
+  static async checkAndQueueFlowResumption(
+    kv: KVStore,
+    queue: Queue<FlowExecutionMessage>,
+    runId: string,
+    shared: SharedStorage
+  ): Promise<void> {
+    try {
+      // Only queue resumption if flow is not completed and not waiting for user input
+      if (!shared.completed && !shared.callToAction) {
+        // Use the abstracted heartbeat detection logic
+        if (this.isHeartbeatExpired(shared)) {
+          const timeSinceLastHeartbeat =
+            Date.now() - (shared.lastHeartbeat || 0);
+          console.log(
+            `[FlowManager] Self-healing: Flow ${runId} heartbeat expired (${timeSinceLastHeartbeat}ms > ${HEARTBEAT_TIMEOUT}ms), queueing resumption...`
+          );
+
+          await this.queueFlowExecution(queue, {
+            runId,
+            action: "trigger",
+          });
+
+          console.log(
+            `[FlowManager] Self-healing: Successfully queued flow ${runId} for resumption due to heartbeat timeout`
+          );
+        }
+      }
+    } catch (error) {
+      console.error(
+        `[FlowManager] Self-healing: Failed to queue flow ${runId} for resumption:`,
+        error
+      );
+      // Don't throw - self-healing should be best-effort
     }
   }
 }

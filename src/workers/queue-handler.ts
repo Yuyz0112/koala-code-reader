@@ -14,7 +14,7 @@ async function createKVStore(environment: CloudflareBindings) {
 
 /**
  * Queue consumer for flow execution
- * Handles background flow processing tasks
+ * Handles background flow processing tasks with enhanced reliability
  */
 export async function handleFlowQueue(
   batch: MessageBatch<FlowExecutionMessage & { timestamp: number }>,
@@ -25,6 +25,8 @@ export async function handleFlowQueue(
   );
 
   for (const message of batch.messages) {
+    const messageId = `${message.body?.runId}-${message.body?.timestamp}`;
+
     try {
       const { runId, action, timestamp } = message.body;
 
@@ -34,26 +36,57 @@ export async function handleFlowQueue(
         ).toISOString()})`
       );
 
+      // Check message age to avoid processing stale messages
+      const messageAge = Date.now() - timestamp;
+      const MAX_MESSAGE_AGE = 10 * 60 * 1000; // 10 minutes
+
+      if (messageAge > MAX_MESSAGE_AGE) {
+        console.warn(
+          `[Queue] Message for flow ${runId} is too old (${messageAge}ms), skipping`
+        );
+        message.ack();
+        continue;
+      }
+
       // Create required dependencies
       const kvStore = await createKVStore(env);
       const models = createModels(env);
 
-      // Execute the flow
-      await FlowManager.triggerFlow(kvStore, models, runId);
+      // Add execution timeout protection
+      const executionPromise = FlowManager.triggerFlow(kvStore, models, runId);
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(
+          () => reject(new Error("Flow execution timeout")),
+          5 * 60 * 1000
+        ); // 5 minutes
+      });
+
+      await Promise.race([executionPromise, timeoutPromise]);
 
       // Acknowledge successful processing
       message.ack();
 
-      console.log(
-        `[Queue] Successfully processed ${action} for flow ${runId}`
-      );
+      console.log(`[Queue] Successfully processed ${action} for flow ${runId}`);
     } catch (error) {
-      console.error(
-        `[Queue] Error processing message for flow ${message.body?.runId}:`,
-        error
-      );
+      console.error(`[Queue] Error processing message ${messageId}:`, error);
 
-      // Retry the message (don't ack, let it retry)
+      // Enhanced retry logic with exponential backoff consideration
+      const retryCount = message.attempts || 1;
+      const maxRetries = 3;
+
+      if (retryCount >= maxRetries) {
+        console.error(
+          `[Queue] Message ${messageId} exceeded max retries (${maxRetries}), moving to DLQ`
+        );
+        // Let the message go to dead letter queue by not acking or retrying
+        return;
+      }
+
+      console.log(
+        `[Queue] Retrying message ${messageId} (attempt ${
+          retryCount + 1
+        }/${maxRetries})`
+      );
       message.retry();
     }
   }

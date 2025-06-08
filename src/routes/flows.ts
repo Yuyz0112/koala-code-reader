@@ -66,6 +66,7 @@ flows.post("/", async (c) => {
       summariesBuffer: [],
       reducedOutput: "",
       completed: false,
+      lastHeartbeat: Date.now(), // Initialize heartbeat for new flows
     };
 
     // Get KV store
@@ -115,6 +116,14 @@ flows.get("/:runId", async (c) => {
     if (!result.exists || !result.shared) {
       return c.json({ error: "Flow not found" }, 404);
     }
+
+    // Self-healing: Check if flow needs resumption and queue it
+    await FlowManager.checkAndQueueFlowResumption(
+      kvStore,
+      (c.env as CloudflareBindings).FLOW_QUEUE,
+      runId,
+      result.shared
+    );
 
     return c.json({
       runId,
