@@ -11,22 +11,24 @@ import {
 } from "./nodes";
 import { SharedStorage } from "./utils/storage";
 import { PersistedFlow, KVStore } from "./persisted-flow";
-import { R2KVStore } from "./utils/r2-kv-store";
+import { LLM, ModelSet } from "./utils/llm";
 
 const MAX_RETRIES = 3;
 
 // Create and configure the flow nodes
-export function createFlowNodes() {
-  const getEntryFileNode = new GetEntryFileNode(MAX_RETRIES);
+export function createFlowNodes(models: ModelSet) {
+  const llm = new LLM(models);
+
+  const getEntryFileNode = new GetEntryFileNode(llm, MAX_RETRIES);
   const improveBasicInputNode = new ImproveBasicInputNode(MAX_RETRIES);
   const waitingForBasicInputImprovementNode =
     new WaitingForBasicInputImprovementNode(MAX_RETRIES);
-  const analyzeFileNode = new AnalyzeFileNode(MAX_RETRIES);
+  const analyzeFileNode = new AnalyzeFileNode(llm, MAX_RETRIES);
   const userFeedbackNode = new UserFeedbackNode(MAX_RETRIES);
   const waitingForUserFeedbackNode = new WaitingForUserFeedbackNode(
     MAX_RETRIES
   );
-  const reduceHistoryNode = new ReduceHistoryNode(MAX_RETRIES);
+  const reduceHistoryNode = new ReduceHistoryNode(llm, MAX_RETRIES);
   const finishNode = new FinishNode(MAX_RETRIES);
 
   // Configure node connections
@@ -62,9 +64,10 @@ export function createFlowNodes() {
 // Create a new persisted flow instance
 export function createPersistedFlow(
   kvStore: KVStore,
+  models: ModelSet,
   runId?: string
 ): PersistedFlow<SharedStorage> {
-  const startNode = createFlowNodes();
+  const startNode = createFlowNodes(models);
   return new PersistedFlow<SharedStorage>(startNode, kvStore, runId);
 }
 

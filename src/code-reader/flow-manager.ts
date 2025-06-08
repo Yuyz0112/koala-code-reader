@@ -2,6 +2,7 @@ import { PersistedFlow } from "./persisted-flow";
 import { createFlowNodes } from "./flow";
 import { SharedStorage } from "./utils/storage";
 import type { KVStore } from "./persisted-flow";
+import { ModelSet } from "./utils/llm";
 
 /**
  * Flow Manager - handles flow lifecycle with memory optimization
@@ -17,8 +18,12 @@ export class FlowManager {
   /**
    * Execute one step and return immediately (for synchronous API responses)
    */
-  static async executeOneStep(kv: KVStore, runId: string): Promise<boolean> {
-    const flow = await this.getOrAttachFlow(kv, runId);
+  static async executeOneStep(
+    kv: KVStore,
+    models: ModelSet,
+    runId: string
+  ): Promise<boolean> {
+    const flow = await this.getOrAttachFlow(kv, models, runId);
     if (!flow) return false;
 
     const hasMore = await flow.step();
@@ -33,7 +38,11 @@ export class FlowManager {
    * Trigger flow execution in background (async)
    * This is the core "step to next call to action" logic
    */
-  static async triggerFlow(kv: KVStore, runId: string): Promise<void> {
+  static async triggerFlow(
+    kv: KVStore,
+    models: ModelSet,
+    runId: string
+  ): Promise<void> {
     // Check if flow is already running in memory
     if (this.activeFlows.has(runId)) {
       // Flow is already being processed, do nothing
@@ -41,7 +50,7 @@ export class FlowManager {
     }
 
     try {
-      const flow = await this.getOrAttachFlow(kv, runId);
+      const flow = await this.getOrAttachFlow(kv, models, runId);
       if (!flow) return;
 
       // First check if flow is already waiting for user input
@@ -78,13 +87,14 @@ export class FlowManager {
    */
   static async handleUserInput(
     kv: KVStore,
+    models: ModelSet,
     runId: string,
     inputType: string,
     inputData: any
   ): Promise<{ success: boolean; message: string }> {
     try {
       // Get current shared state
-      const flow = await this.getOrAttachFlow(kv, runId);
+      const flow = await this.getOrAttachFlow(kv, models, runId);
       if (!flow) {
         return { success: false, message: "Flow not found" };
       }
@@ -137,7 +147,7 @@ export class FlowManager {
       this.activeFlows.delete(runId);
 
       // Trigger flow continuation in background
-      this.triggerFlow(kv, runId).catch((error) => {
+      this.triggerFlow(kv, models, runId).catch((error) => {
         console.error(`Failed to resume flow ${runId}:`, error);
       });
 
@@ -156,10 +166,11 @@ export class FlowManager {
    */
   static async getFlowById(
     kv: KVStore,
+    models: ModelSet,
     runId: string
   ): Promise<{ shared: SharedStorage | null; exists: boolean }> {
     try {
-      const flow = await this.getOrAttachFlow(kv, runId);
+      const flow = await this.getOrAttachFlow(kv, models, runId);
       if (!flow) {
         return { shared: null, exists: false };
       }
@@ -181,6 +192,7 @@ export class FlowManager {
    */
   private static async getOrAttachFlow(
     kv: KVStore,
+    models: ModelSet,
     runId: string
   ): Promise<PersistedFlow<SharedStorage> | null> {
     // Check if flow exists in memory
@@ -189,7 +201,7 @@ export class FlowManager {
     if (!flow) {
       // Try to attach from storage
       try {
-        const startNode = createFlowNodes();
+        const startNode = createFlowNodes(models);
         flow = await PersistedFlow.attach<SharedStorage>(kv, runId, startNode);
         this.activeFlows.set(runId, flow);
       } catch (error) {
@@ -206,11 +218,12 @@ export class FlowManager {
    */
   static async initializeFlow(
     kv: KVStore,
+    models: ModelSet,
     runId: string,
     shared: SharedStorage
   ): Promise<{ success: boolean }> {
     try {
-      const startNode = createFlowNodes();
+      const startNode = createFlowNodes(models);
       const flow = new PersistedFlow<SharedStorage>(startNode, kv, runId);
 
       // Only initialize the record, no execution

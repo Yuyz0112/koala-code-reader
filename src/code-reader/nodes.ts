@@ -15,24 +15,25 @@ export enum Actions {
 }
 
 export class GetEntryFileNode extends Node {
-  constructor(maxRetries?: number) {
+  llm: LLM;
+
+  constructor(llm: LLM, maxRetries?: number) {
     super(maxRetries);
+    this.llm = llm;
   }
 
-  async prep(
-    shared: SharedStorage
-  ): Promise<Pick<SharedStorage, "basic" | "__ctx">> {
+  async prep(shared: SharedStorage): Promise<Pick<SharedStorage, "basic">> {
     return {
       basic: shared.basic,
-      __ctx: shared.__ctx,
     };
   }
 
   async exec(
-    prepRes: Pick<SharedStorage, "basic" | "__ctx">
+    prepRes: Pick<SharedStorage, "basic">
   ): Promise<Pick<SharedStorage, "nextFile"> | { askUser: string }> {
-    const llm = new LLM(prepRes.__ctx.models);
-    const { decision, next_file, ask_user } = await llm.getEntryFile(prepRes);
+    const { decision, next_file, ask_user } = await this.llm.getEntryFile(
+      prepRes
+    );
 
     if (decision === "need_more_info") {
       return { askUser: ask_user ?? "Please provide more information." };
@@ -83,66 +84,74 @@ export class ImproveBasicInputNode extends Node {
 }
 
 export class AnalyzeFileNode extends Node {
-  constructor(maxRetries?: number) {
+  llm: LLM;
+
+  constructor(llm: LLM, maxRetries?: number) {
     super(maxRetries);
+    this.llm = llm;
   }
 
   async prep(
     shared: SharedStorage
   ): Promise<
-    Pick<
-      SharedStorage,
-      "basic" | "nextFile" | "currentFile" | "userFeedback" | "__ctx"
-    >
+    Pick<SharedStorage, "basic" | "nextFile" | "currentFile" | "userFeedback">
   > {
     return {
       basic: shared.basic,
       nextFile: shared.nextFile,
       currentFile: shared.currentFile,
       userFeedback: shared.userFeedback,
-      __ctx: shared.__ctx,
     };
   }
 
   async exec(
     prepRes: Pick<
       SharedStorage,
-      "basic" | "nextFile" | "currentFile" | "userFeedback" | "__ctx"
+      "basic" | "nextFile" | "currentFile" | "userFeedback"
     >
-  ): Promise<Pick<SharedStorage, "currentFile" | "nextFile"> | null | { needsRegeneration: true; reason: string }> {
-    const targetFileName = prepRes.userFeedback?.action === "reject"
-      ? prepRes.currentFile?.name
-      : prepRes.nextFile?.name;
+  ): Promise<
+    | Pick<SharedStorage, "currentFile" | "nextFile">
+    | null
+    | { needsRegeneration: true; reason: string }
+  > {
+    const targetFileName =
+      prepRes.userFeedback?.action === "reject"
+        ? prepRes.currentFile?.name
+        : prepRes.nextFile?.name;
 
     if (!targetFileName) {
       throw new Error("No file specified for analysis");
     }
 
     // Check if the target file exists in shared.files
-    const targetFileExists = prepRes.basic.files.some(file => file.path === targetFileName);
+    const targetFileExists = prepRes.basic.files.some(
+      (file) => file.path === targetFileName
+    );
     if (!targetFileExists) {
       // File doesn't exist in shared.files, need to regenerate
-      return { 
-        needsRegeneration: true, 
-        reason: "File not found in available files, requesting regeneration" 
+      return {
+        needsRegeneration: true,
+        reason: "File not found in available files, requesting regeneration",
       };
     }
 
     // Check if the file has already been analyzed (status is "done")
-    const targetFile = prepRes.basic.files.find(file => file.path === targetFileName);
+    const targetFile = prepRes.basic.files.find(
+      (file) => file.path === targetFileName
+    );
     if (targetFile?.status === "done" && targetFile.summary) {
       // File already analyzed, need to regenerate to select a different file
-      return { 
-        needsRegeneration: true, 
-        reason: "File has already been analyzed, please select a different file" 
+      return {
+        needsRegeneration: true,
+        reason:
+          "File has already been analyzed, please select a different file",
       };
     }
 
     // File exists but not analyzed yet, proceed with analysis
     const toAnalyzeContent = await readFileFromStorage(targetFileName, prepRes);
 
-    const llm = new LLM(prepRes.__ctx.models);
-    const result = await llm.analyzeFile(prepRes, toAnalyzeContent);
+    const result = await this.llm.analyzeFile(prepRes, toAnalyzeContent);
 
     if ("analysis_complete" in result) {
       // Analysis is complete, no more files to analyze
@@ -167,7 +176,10 @@ export class AnalyzeFileNode extends Node {
   async post(
     shared: SharedStorage,
     _: unknown,
-    execRes: Pick<SharedStorage, "currentFile" | "nextFile"> | null | { needsRegeneration: true; reason: string }
+    execRes:
+      | Pick<SharedStorage, "currentFile" | "nextFile">
+      | null
+      | { needsRegeneration: true; reason: string }
   ): Promise<string | undefined> {
     if (!execRes) {
       shared.completed = true;
@@ -211,8 +223,11 @@ export class UserFeedbackNode extends Node {
 }
 
 export class ReduceHistoryNode extends Node {
-  constructor(maxRetries?: number) {
+  llm: LLM;
+
+  constructor(llm: LLM, maxRetries?: number) {
     super(maxRetries);
+    this.llm = llm;
   }
 
   async prep(
@@ -226,7 +241,6 @@ export class ReduceHistoryNode extends Node {
       | "userFeedback"
       | "basic"
       | "completed"
-      | "__ctx"
     >
   > {
     return {
@@ -236,7 +250,6 @@ export class ReduceHistoryNode extends Node {
       userFeedback: shared.userFeedback,
       basic: shared.basic,
       completed: shared.completed,
-      __ctx: shared.__ctx,
     };
   }
 
@@ -249,7 +262,6 @@ export class ReduceHistoryNode extends Node {
       | "userFeedback"
       | "basic"
       | "completed"
-      | "__ctx"
     >
   ): Promise<
     Pick<SharedStorage, "reducedOutput" | "summariesBuffer"> & {
@@ -300,8 +312,7 @@ export class ReduceHistoryNode extends Node {
     }
 
     // Step 3: Use LLM to reduce history with new information
-    const llm = new LLM(prepRes.__ctx.models);
-    const { reduced_output } = await llm.reduceHistory({
+    const { reduced_output } = await this.llm.reduceHistory({
       basic: { ...prepRes.basic, files: updatedFiles },
       reducedOutput: prepRes.reducedOutput,
       summariesBuffer: prepRes.summariesBuffer,

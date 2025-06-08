@@ -5,7 +5,7 @@ import {
   reduceHistoryPrompt,
 } from "./prompts";
 import { SharedStorage, getAnalyzedSummaries } from "./storage";
-import { generateText } from "ai";
+import { generateText, LanguageModelV1 } from "ai";
 
 function parseMessageToYaml<T = any>(input: string): T {
   const yamlCodeBlockRegex = /```(?:ya?ml)\s*\n([\s\S]*?)\n```/gi;
@@ -25,10 +25,14 @@ function parseMessageToYaml<T = any>(input: string): T {
   }
 }
 
-export class LLM {
-  models: SharedStorage["__ctx"]["models"];
+export type ModelSet = {
+  default: LanguageModelV1;
+};
 
-  constructor(models: SharedStorage["__ctx"]["models"]) {
+export class LLM {
+  models: ModelSet;
+
+  constructor(models: ModelSet) {
     this.models = models;
   }
 

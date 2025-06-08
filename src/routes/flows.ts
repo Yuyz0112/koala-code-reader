@@ -18,6 +18,17 @@ async function createKVStore(environment: CloudflareBindings) {
   return new R2KVStore(environment.FLOW_STORAGE_BUCKET);
 }
 
+export function createModels(environment: CloudflareBindings) {
+  const models = {
+    default: createOpenAI({
+      apiKey: environment.OPENAI_API_KEY as string,
+      baseURL: `https://clear-robin-12.deno.dev/v1`,
+    })("gpt-4o"),
+  };
+
+  return models;
+}
+
 // Create a new flow
 flows.post("/", async (c) => {
   try {
@@ -31,38 +42,35 @@ flows.post("/", async (c) => {
       );
     }
 
-    // Initialize models
-    const models = {
-      default: createOpenAI({
-        apiKey: env(c).OPENAI_API_KEY as string,
-        baseURL: `https://clear-robin-12.deno.dev/v1`,
-      })("gpt-4o"),
-    };
-
     const shared: SharedStorage = {
       basic,
       summariesBuffer: [],
       reducedOutput: "",
       completed: false,
-      __ctx: {
-        models,
-      },
     };
 
     // Get KV store
     const kvStore = await createKVStore(c.env as CloudflareBindings);
 
+    // Initialize models
+    const models = createModels(c.env as CloudflareBindings);
+
     const flowRunId = runId || crypto.randomUUID();
 
     // Initialize flow
-    const result = await FlowManager.initializeFlow(kvStore, flowRunId, shared);
+    const result = await FlowManager.initializeFlow(
+      kvStore,
+      models,
+      flowRunId,
+      shared
+    );
 
     if (!result.success) {
       return c.json({ error: "Failed to initialize flow" }, 500);
     }
 
     // Trigger flow execution in background
-    FlowManager.triggerFlow(kvStore, flowRunId).catch((error) => {
+    FlowManager.triggerFlow(kvStore, models, flowRunId).catch((error) => {
       console.error("Background flow execution error:", error);
     });
 
@@ -81,14 +89,15 @@ flows.get("/:runId", async (c) => {
     const { runId } = c.req.param();
 
     const kvStore = await createKVStore(c.env as CloudflareBindings);
+    const models = createModels(c.env as CloudflareBindings);
 
-    const result = await FlowManager.getFlowById(kvStore, runId);
+    const result = await FlowManager.getFlowById(kvStore, models, runId);
     if (!result.exists || !result.shared) {
       return c.json({ error: "Flow not found" }, 404);
     }
 
     // Trigger flow execution in background (self-healing)
-    FlowManager.triggerFlow(kvStore, runId).catch((error) => {
+    FlowManager.triggerFlow(kvStore, models, runId).catch((error) => {
       console.error("Background flow trigger error:", error);
     });
 
@@ -119,10 +128,12 @@ flows.post("/:runId/input", async (c) => {
     }
 
     const kvStore = await createKVStore(c.env as CloudflareBindings);
+    const models = createModels(c.env as CloudflareBindings);
 
     // Handle user input via FlowManager
     const result = await FlowManager.handleUserInput(
       kvStore,
+      models,
       runId,
       inputType,
       inputData

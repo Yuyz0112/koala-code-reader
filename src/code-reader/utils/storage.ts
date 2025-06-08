@@ -1,5 +1,3 @@
-import { LanguageModelV1 } from "ai";
-
 export type FileStatus = "pending" | "ignored" | "done";
 
 export type FileItem = {
@@ -60,12 +58,6 @@ export type SharedStorage = {
   // Call to action for UI to determine what user interaction is needed
   // Only set by compute nodes, cleared by FlowManager
   callToAction?: "improve_basic_input" | "user_feedback" | "finish" | null;
-
-  __ctx: {
-    models: {
-      default: LanguageModelV1;
-    };
-  };
 };
 
 export function generateFileStructureWithStatus(files: FileItem[]): string {
