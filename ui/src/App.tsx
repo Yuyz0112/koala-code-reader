@@ -1,18 +1,22 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 import { useFlowAPI } from "@/hooks/use-flow-api";
 import { RepoSetupForm } from "@/components/RepoSetupForm";
 import { MessagesPanel } from "@/components/MessagesPanel";
 import { InteractionPanel } from "@/components/InteractionPanel";
+import { FlowsList } from "@/components/FlowsList";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 import { RepoSetup, AnalysisData } from "@/types";
+import { ArrowLeft } from "lucide-react";
 
 function App() {
   const [analysisData, setAnalysisData] = useState<AnalysisData>({
     fileSummaries: [],
     reducedOutput: "",
   });
+  const [currentView, setCurrentView] = useState<"list" | "analysis">("list");
 
   const { toast } = useToast();
 
@@ -22,9 +26,14 @@ function App() {
     currentRequestType,
     currentRequestData,
     flowStatus,
+    flows,
+    isLoadingFlows,
     startAnalysis,
     fetchRepo,
     handleUserInteraction,
+    loadFlows,
+    deleteFlow,
+    loadFlow,
   } = useFlowAPI();
 
   // Update analysis data when flow status changes
@@ -48,8 +57,8 @@ function App() {
 
   const handleRepoSubmit = async (repoData: RepoSetup) => {
     const result = await startAnalysis(repoData);
-
     if (result.success) {
+      setCurrentView("analysis");
       toast({
         title: "Analysis Started",
         description: "Repository analysis has been initiated.",
@@ -65,86 +74,126 @@ function App() {
 
   const handleFetchRepo = async (repoUrl: string, ref: string) => {
     const result = await fetchRepo(repoUrl, ref);
-
-    if (result.success) {
+    if (!result.success) {
       toast({
-        title: "Repository Fetched",
-        description: "Successfully fetched repository structure",
-      });
-    } else {
-      toast({
-        title: "Fetch Failed",
+        title: "Error",
         description: result.error || "Failed to fetch repository",
         variant: "destructive",
       });
     }
-
     return result;
   };
 
+  const handleNewFlow = () => {
+    setCurrentView("analysis");
+  };
+
+  const handleLoadFlow = async (runId: string) => {
+    const result = await loadFlow(runId);
+    if (result.success) {
+      setCurrentView("analysis");
+      toast({
+        title: "Flow Loaded",
+        description: `Flow has been loaded successfully.`,
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: result.error || "Failed to load flow",
+        variant: "destructive",
+      });
+    }
+    return result;
+  };
+
+  const handleDeleteFlow = async (runId: string) => {
+    const result = await deleteFlow(runId);
+    if (result.success) {
+      toast({
+        title: "Flow Deleted",
+        description: "Flow has been deleted successfully.",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: result.error || "Failed to delete flow",
+        variant: "destructive",
+      });
+    }
+    return result;
+  };
+
+  const handleBackToList = () => {
+    setCurrentView("list");
+  };
+
+  if (currentView === "list") {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          <FlowsList
+            flows={flows}
+            isLoading={isLoadingFlows}
+            onLoadFlows={loadFlows}
+            onDeleteFlow={handleDeleteFlow}
+            onLoadFlow={handleLoadFlow}
+            onNewFlow={handleNewFlow}
+          />
+        </div>
+        <Toaster />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto py-6 px-4">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Koala Code Reader
-          </h1>
-          <p className="text-gray-600">
-            Intelligent repository analysis powered by AI
-          </p>
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-4">
+          <Button variant="outline" onClick={handleBackToList}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Flows
+          </Button>
         </div>
 
-        <div className="mb-4 flex gap-2">
-          {analysisStarted ? null : (
-            <div className="text-sm text-gray-600">
-              Ready to start repository analysis
-            </div>
-          )}
-        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            {analysisStarted ? null : (
+              <div className="mb-6">
+                <RepoSetupForm
+                  onSubmit={handleRepoSubmit}
+                  onFetchRepo={handleFetchRepo}
+                />
+              </div>
+            )}
 
-        {currentRequestType && (
-          <div className="mb-6">
             <InteractionPanel
               requestType={currentRequestType}
               requestData={currentRequestData}
               onSendResponse={handleUserInteraction}
             />
-          </div>
-        )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <Tabs defaultValue="setup" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="setup">Setup</TabsTrigger>
-                <TabsTrigger value="results">Results</TabsTrigger>
+            <Tabs defaultValue="output" className="mt-6">
+              <TabsList>
+                <TabsTrigger value="output">Analysis Output</TabsTrigger>
                 <TabsTrigger value="summaries">File Summaries</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="setup" className="space-y-4">
-                <RepoSetupForm
-                  onSubmit={handleRepoSubmit}
-                  onFetchRepo={handleFetchRepo}
-                  disabled={analysisStarted}
-                />
-              </TabsContent>
-
-              <TabsContent value="results" className="space-y-4">
+              <TabsContent value="output" className="space-y-4">
                 <div className="p-6 bg-white rounded-lg border">
                   {analysisData.reducedOutput ? (
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold">
-                        Analysis Results
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">
+                        Analysis Summary
                       </h3>
-                      <pre className="whitespace-pre-wrap text-sm bg-gray-50 p-4 rounded-md overflow-auto">
+                      <pre className="whitespace-pre-wrap text-sm">
                         {analysisData.reducedOutput}
                       </pre>
                     </div>
                   ) : (
                     <div className="text-center py-12 text-gray-500">
-                      <p>No analysis results yet.</p>
+                      <p>Analysis output will appear here.</p>
                       <p className="text-sm">
-                        Start an analysis to see results here.
+                        Start by submitting a repository for analysis.
                       </p>
                     </div>
                   )}

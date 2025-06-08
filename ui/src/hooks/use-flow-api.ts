@@ -4,6 +4,7 @@ import {
   apiClient,
   type FlowStatus,
   type StartAnalysisRequest,
+  type FlowListItem,
 } from "@/lib/api-client";
 
 export const useFlowAPI = () => {
@@ -13,6 +14,8 @@ export const useFlowAPI = () => {
   const [currentRequestType, setCurrentRequestType] =
     useState<RequestType>(null);
   const [currentRequestData, setCurrentRequestData] = useState<any>(null);
+  const [flows, setFlows] = useState<FlowListItem[]>([]);
+  const [isLoadingFlows, setIsLoadingFlows] = useState(false);
 
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const isPollingRef = useRef(false);
@@ -280,6 +283,62 @@ export const useFlowAPI = () => {
     [currentRequestType, currentRunId, addMessage, startPolling, stopPolling]
   );
 
+  // Load all flows
+  const loadFlows = useCallback(async () => {
+    setIsLoadingFlows(true);
+    try {
+      const data = await apiClient.listFlows();
+      setFlows(data.flows);
+      return { success: true, flows: data.flows };
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to load flows";
+      return { success: false, error: errorMessage };
+    } finally {
+      setIsLoadingFlows(false);
+    }
+  }, []);
+
+  // Delete a flow
+  const deleteFlow = useCallback(
+    async (runId: string) => {
+      try {
+        await apiClient.deleteFlow(runId);
+        // Refresh flows list after deletion
+        await loadFlows();
+        return { success: true };
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to delete flow";
+        return { success: false, error: errorMessage };
+      }
+    },
+    [loadFlows]
+  );
+
+  // Load a specific flow and set it as current
+  const loadFlow = useCallback(
+    async (runId: string) => {
+      try {
+        const data = await apiClient.getFlowStatus(runId);
+        setCurrentRunId(runId);
+        setFlowStatus(data.shared || null);
+
+        // Start polling if flow is not completed
+        if (data.shared && !data.shared.completed) {
+          startPolling(runId);
+        }
+
+        return { success: true, flow: data.shared };
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Failed to load flow";
+        return { success: false, error: errorMessage };
+      }
+    },
+    [startPolling]
+  );
+
   useEffect(() => {
     return () => {
       stopPolling();
@@ -293,8 +352,13 @@ export const useFlowAPI = () => {
     currentRequestData,
     flowStatus,
     currentRunId,
+    flows,
+    isLoadingFlows,
     startAnalysis,
     fetchRepo,
     handleUserInteraction,
+    loadFlows,
+    deleteFlow,
+    loadFlow,
   };
 };

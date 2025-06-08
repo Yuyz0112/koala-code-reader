@@ -53,6 +53,23 @@ export interface UserInputRequest {
   inputData: any;
 }
 
+export interface FlowListItem {
+  runId: string;
+  basic: {
+    repoName?: string;
+    mainGoal?: string;
+    specificAreas?: string;
+    githubUrl?: string;
+  };
+  createdAt: string;
+  completed: boolean;
+}
+
+export interface FlowListResponse {
+  flows: FlowListItem[];
+  total: number;
+}
+
 export class FlowAPIClient {
   private baseUrl: string;
 
@@ -134,6 +151,19 @@ export class FlowAPIClient {
     if (!response.ok) {
       throw new Error(`Failed to delete flow: ${response.status}`);
     }
+  }
+
+  /**
+   * List all flows
+   */
+  async listFlows(): Promise<FlowListResponse> {
+    const response = await fetch(`${this.baseUrl}/api/flows`);
+
+    if (!response.ok) {
+      throw new Error(`Failed to list flows: ${response.status}`);
+    }
+
+    return response.json();
   }
 
   /**
