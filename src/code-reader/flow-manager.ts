@@ -274,4 +274,66 @@ export class FlowManager {
       };
     }
   }
+
+  /**
+   * List all flows with basic information
+   */
+  static async listFlows(kv: KVStore): Promise<{
+    success: boolean;
+    flows: Array<{
+      runId: string;
+      basic: any;
+      createdAt: string;
+      completed: boolean;
+    }>;
+  }> {
+    try {
+      // Check if KV store supports listKeys
+      if (!kv.listKeys) {
+        console.warn("KV store doesn't support listKeys operation");
+        return { success: false, flows: [] };
+      }
+
+      // Get all flow keys
+      const flowKeys = await kv.listKeys("flow:");
+      const flows = [];
+
+      // Read each flow's basic information
+      for (const key of flowKeys) {
+        try {
+          const flowRecord = await kv.read<{
+            flowName: string;
+            params: Record<string, unknown>;
+            shared: any;
+            createdAt: string;
+            nodes: Array<any>;
+          }>(key);
+
+          if (flowRecord) {
+            const runId = key.replace("flow:", "");
+            flows.push({
+              runId,
+              basic: flowRecord.shared?.basic || {},
+              createdAt: flowRecord.createdAt,
+              completed: flowRecord.shared?.completed || false,
+            });
+          }
+        } catch (error) {
+          console.error(`Failed to read flow record for key ${key}:`, error);
+          // Continue processing other flows
+        }
+      }
+
+      // Sort by creation date (newest first)
+      flows.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+
+      return { success: true, flows };
+    } catch (error) {
+      console.error("Failed to list flows:", error);
+      return { success: false, flows: [] };
+    }
+  }
 }

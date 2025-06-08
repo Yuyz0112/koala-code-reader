@@ -140,7 +140,7 @@ export const useFlowAPI = () => {
 
       // Start with immediate poll, then continue with interval
       poll();
-      pollingRef.current = setInterval(poll, 2000); // Poll every 2 seconds
+      pollingRef.current = setInterval(poll, 5000);
     },
     [addMessage, currentRequestType, stopPolling]
   );

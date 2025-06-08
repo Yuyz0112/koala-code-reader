@@ -7,6 +7,26 @@ import { R2KVStore } from "../code-reader/flow";
 
 const flows = new Hono();
 
+// List all flows
+flows.get("/", async (c) => {
+  try {
+    const kvStore = await createKVStore(c.env as CloudflareBindings);
+
+    const result = await FlowManager.listFlows(kvStore);
+
+    if (!result.success) {
+      return c.json({ error: "Failed to list flows" }, 500);
+    }
+
+    return c.json({
+      flows: result.flows,
+      total: result.flows.length,
+    });
+  } catch (error: any) {
+    return c.json({ error: `Failed to list flows: ${error.message}` }, 500);
+  }
+});
+
 // Helper function to create KV store
 async function createKVStore(environment: CloudflareBindings) {
   if (!environment.FLOW_STORAGE_BUCKET) {
