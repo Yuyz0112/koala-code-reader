@@ -5,6 +5,7 @@ import { useFlowAPI } from "@/hooks/use-flow-api";
 import { RepoSetupForm } from "@/components/RepoSetupForm";
 import { InteractionPanel } from "@/components/InteractionPanel";
 import { FlowsList } from "@/components/FlowsList";
+import { FileViewer } from "@/components/FileViewer";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 import { RepoSetup, AnalysisData } from "@/types";
@@ -169,18 +170,21 @@ function App() {
                 <TabsTrigger value="summaries">File Summaries</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="current-file" className="flex-1 space-y-4">
-                <div className="p-6 bg-white rounded-lg border h-full">
-                  <div className="text-center py-12 text-gray-500">
-                    <p>Current file content will appear here.</p>
-                    <p className="text-sm">
-                      Select a file to view its content.
-                    </p>
-                  </div>
-                </div>
+              <TabsContent
+                value="current-file"
+                className="flex-1 overflow-hidden space-y-4"
+              >
+                <FileViewer
+                  filePath={flowStatus?.currentFile?.name || null}
+                  githubUrl={flowStatus?.basic?.githubUrl}
+                  githubRef={flowStatus?.basic?.githubRef}
+                />
               </TabsContent>
 
-              <TabsContent value="output" className="flex-1 space-y-4">
+              <TabsContent
+                value="output"
+                className="flex-1 overflow-hidden space-y-4"
+              >
                 <div className="p-6 bg-white rounded-lg border h-full overflow-auto">
                   {analysisData.reducedOutput ? (
                     <div>

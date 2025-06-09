@@ -80,9 +80,8 @@ github.get("/:owner/:repo", async (c) => {
 });
 
 // New endpoint for reading file contents
-github.get("/:owner/:repo/contents/*", async (c) => {
-  const { owner, repo } = c.req.param();
-  const filePath = c.req.param("*") || ""; // Get the file path from the wildcard
+github.get("/:owner/:repo/contents/:filePath{.*}", async (c) => {
+  const { owner, repo, filePath } = c.req.param();
   const ref = c.req.query("ref") || "main";
 
   try {

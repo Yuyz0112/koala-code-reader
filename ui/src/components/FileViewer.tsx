@@ -1,0 +1,143 @@
+import { useState, useEffect } from "react";
+import { apiClient } from "@/lib/api-client";
+import { Button } from "@/components/ui/button";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Loader2, FileText, AlertCircle } from "lucide-react";
+
+interface FileViewerProps {
+  filePath: string | null;
+  githubUrl?: string;
+  githubRef?: string;
+}
+
+export function FileViewer({
+  filePath,
+  githubUrl,
+  githubRef = "main",
+}: FileViewerProps) {
+  const [content, setContent] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadFileContent = async () => {
+    if (!filePath || !githubUrl) {
+      setContent("");
+      setError(null);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Extract owner and repo from GitHub URL
+      const match = githubUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+      if (!match) {
+        throw new Error("Invalid GitHub URL format");
+      }
+
+      const [, owner, repo] = match;
+      const cleanRepo = repo.replace(/\.git$/, "");
+
+      const fileData = await apiClient.readFileFromGitHub(
+        owner,
+        cleanRepo,
+        filePath,
+        githubRef
+      );
+
+      setContent(fileData.content);
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to load file";
+      setError(errorMessage);
+      console.error("Error loading file:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadFileContent();
+  }, [filePath, githubUrl, githubRef]);
+
+  if (!filePath) {
+    return (
+      <div className="p-6 bg-white rounded-lg border h-full">
+        <div className="text-center py-12 text-gray-500">
+          <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+          <p>Current file content will appear here.</p>
+          <p className="text-sm">Select a file to view its content.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="p-6 bg-white rounded-lg border h-full">
+        <div className="text-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-500" />
+          <p className="text-gray-500">Loading file content...</p>
+          <p className="text-sm text-gray-400 mt-1">{filePath}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 bg-white rounded-lg border h-full">
+        <div className="text-center py-12">
+          <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-400" />
+          <p className="text-red-600 mb-2">Failed to load file</p>
+          <p className="text-sm text-gray-500 mb-4">{error}</p>
+          <Button variant="outline" onClick={loadFileContent}>
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Get file extension for syntax highlighting class
+  const getFileExtension = (path: string) => {
+    const parts = path.split(".");
+    return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : "";
+  };
+
+  const extension = getFileExtension(filePath);
+
+  return (
+    <div className="bg-white rounded-lg border h-full flex flex-col">
+      {/* File header */}
+      <div className="flex items-center justify-between p-4 border-b bg-gray-50">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <FileText className="h-4 w-4 text-gray-500 flex-shrink-0" />
+          <span
+            className="font-mono text-sm text-gray-700 truncate"
+            title={filePath}
+          >
+            {filePath}
+          </span>
+        </div>
+      </div>
+
+      {/* File content */}
+      <ScrollArea className="flex-1">
+        <div className="p-4">
+          <pre className="text-sm font-mono whitespace-pre ">
+            <code className={`language-${extension}`}>{content}</code>
+          </pre>
+        </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
+
+      {/* File info footer */}
+      <div className="p-2 border-t bg-gray-50 text-xs text-gray-500 flex justify-between">
+        <span>{content.split("\n").length} lines</span>
+        <span>{new Blob([content]).size} bytes</span>
+      </div>
+    </div>
+  );
+}

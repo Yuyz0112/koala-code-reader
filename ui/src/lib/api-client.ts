@@ -14,6 +14,8 @@ export interface FlowStatus {
     repoName: string;
     mainGoal: string;
     specificAreas?: string;
+    githubUrl?: string;
+    githubRef?: string;
     files: Array<{
       path: string;
       status: string;

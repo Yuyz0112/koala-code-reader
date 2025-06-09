@@ -19,6 +19,7 @@ export const useFlowAPI = () => {
 
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const isPollingRef = useRef(false);
+  const isRequestInProgressRef = useRef(false);
 
   const addMessage = useCallback((message: string) => {
     setMessages((prev) => [...prev, message]);
@@ -26,6 +27,7 @@ export const useFlowAPI = () => {
 
   const stopPolling = useCallback(() => {
     isPollingRef.current = false;
+    isRequestInProgressRef.current = false;
     if (pollingRef.current) {
       clearInterval(pollingRef.current);
       pollingRef.current = null;
@@ -41,6 +43,14 @@ export const useFlowAPI = () => {
       const poll = async () => {
         // If polling was stopped, don't continue
         if (!isPollingRef.current) return;
+        
+        // If a request is already in progress, skip this poll
+        if (isRequestInProgressRef.current) {
+          console.log("Skipping poll - request already in progress");
+          return;
+        }
+
+        isRequestInProgressRef.current = true;
 
         try {
           const data = await apiClient.getFlowStatus(runId);
@@ -137,6 +147,9 @@ export const useFlowAPI = () => {
             }`
           );
           // Continue polling on error - setInterval will retry automatically
+        } finally {
+          // Reset request state regardless of success or error
+          isRequestInProgressRef.current = false;
         }
       };
 
