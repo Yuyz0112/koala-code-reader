@@ -9,6 +9,10 @@ export interface FlowStatus {
       summary: string;
     };
   };
+  nextFile?: {
+    name: string;
+    reason: string;
+  };
   reducedOutput: string;
   basic?: {
     repoName: string;
@@ -16,12 +20,7 @@ export interface FlowStatus {
     specificAreas?: string;
     githubUrl?: string;
     githubRef?: string;
-    files: Array<{
-      path: string;
-      status: string;
-      type: string;
-      summary?: string; // Analysis summary for analyzed files
-    }>;
+    files: FileItem[];
   };
 }
 

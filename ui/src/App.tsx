@@ -6,6 +6,7 @@ import { RepoSetupForm } from "@/components/RepoSetupForm";
 import { InteractionPanel } from "@/components/InteractionPanel";
 import { FlowsList } from "@/components/FlowsList";
 import { FileViewer } from "@/components/FileViewer";
+import { FileSummaryList } from "@/components/FileSummaryList";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 import { RepoSetup, AnalysisData } from "@/types";
@@ -17,6 +18,8 @@ function App() {
     reducedOutput: "",
   });
   const [currentView, setCurrentView] = useState<"list" | "analysis">("list");
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("current-file");
 
   const { toast } = useToast();
 
@@ -85,6 +88,11 @@ function App() {
 
   const handleNewFlow = () => {
     setCurrentView("analysis");
+  };
+
+  const handleFileSelect = (filePath: string) => {
+    setSelectedFile(filePath);
+    setActiveTab("current-file");
   };
 
   const handleLoadFlow = async (runId: string) => {
@@ -163,7 +171,11 @@ function App() {
               />
             )}
 
-            <Tabs defaultValue="current-file" className="flex flex-col h-full">
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="flex flex-col h-full"
+            >
               <TabsList>
                 <TabsTrigger value="current-file">Current File</TabsTrigger>
                 <TabsTrigger value="output">Output</TabsTrigger>
@@ -175,7 +187,9 @@ function App() {
                 className="flex-1 overflow-hidden space-y-4"
               >
                 <FileViewer
-                  filePath={flowStatus?.currentFile?.name || null}
+                  filePath={
+                    selectedFile || flowStatus?.currentFile?.name || null
+                  }
                   githubUrl={flowStatus?.basic?.githubUrl}
                   githubRef={flowStatus?.basic?.githubRef}
                 />
@@ -206,38 +220,11 @@ function App() {
                 </div>
               </TabsContent>
 
-              <TabsContent value="summaries" className="flex-1 space-y-4">
-                <div className="p-6 bg-white rounded-lg border h-full overflow-auto">
-                  {analysisData.fileSummaries.length > 0 ? (
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold">
-                        File Summaries ({analysisData.fileSummaries.length})
-                      </h3>
-                      <div className="space-y-4">
-                        {analysisData.fileSummaries.map((summary, index) => (
-                          <div
-                            key={index}
-                            className="p-4 bg-gray-50 rounded-md"
-                          >
-                            <h4 className="font-medium text-sm text-gray-700 mb-2">
-                              {summary.filename}
-                            </h4>
-                            <pre className="whitespace-pre-wrap text-sm text-gray-600">
-                              {summary.summary}
-                            </pre>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-12 text-gray-500">
-                      <p>No file summaries yet.</p>
-                      <p className="text-sm">
-                        File summaries will appear here as they are generated.
-                      </p>
-                    </div>
-                  )}
-                </div>
+              <TabsContent value="summaries" className="flex-1 overflow-hidden">
+                <FileSummaryList
+                  files={flowStatus?.basic?.files || []}
+                  onFileSelect={handleFileSelect}
+                />
               </TabsContent>
             </Tabs>
           </div>
@@ -247,6 +234,7 @@ function App() {
               requestType={currentRequestType}
               requestData={currentRequestData}
               onSendResponse={handleUserInteraction}
+              flowStatus={flowStatus}
             />
           </div>
         </div>

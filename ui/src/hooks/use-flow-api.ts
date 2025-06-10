@@ -43,7 +43,7 @@ export const useFlowAPI = () => {
       const poll = async () => {
         // If polling was stopped, don't continue
         if (!isPollingRef.current) return;
-        
+
         // If a request is already in progress, skip this poll
         if (isRequestInProgressRef.current) {
           console.log("Skipping poll - request already in progress");
@@ -58,7 +58,8 @@ export const useFlowAPI = () => {
 
           // Handle different flow states
           if (data.shared) {
-            const { callToAction, completed, currentFile } = data.shared;
+            const { callToAction, completed, currentFile, nextFile } =
+              data.shared;
 
             // Update progress messages (avoid duplicate messages)
             if (currentFile && currentFile.name) {
@@ -99,6 +100,12 @@ export const useFlowAPI = () => {
                   setCurrentRequestData({
                     message: currentFile?.analysis?.summary,
                     currentFile: currentFile?.name,
+                    nextFile: nextFile
+                      ? {
+                          name: nextFile.name,
+                          reason: nextFile.reason,
+                        }
+                      : null,
                   });
                   break;
 
@@ -270,6 +277,14 @@ export const useFlowAPI = () => {
         // Handle continue button (for finish states)
         inputType = "finish";
         inputData = {};
+      } else if (response.type === "user_feedback") {
+        // Handle specific user feedback actions (approve, reject, refine)
+        inputType = "user_feedback";
+        inputData = {
+          action: response.action,
+          reason: response.reason || "",
+          ...(response.userSummary && { userSummary: response.userSummary }),
+        };
       } else {
         // Handle regular user input
         inputType = currentRequestType;
@@ -278,13 +293,6 @@ export const useFlowAPI = () => {
           case "improve_basic_input":
             inputData = {
               response: response.response,
-            };
-            break;
-
-          case "user_feedback":
-            inputData = {
-              action: "accept",
-              reason: response.response,
             };
             break;
 

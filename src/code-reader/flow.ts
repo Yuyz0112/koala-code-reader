@@ -46,6 +46,7 @@ export function createFlowNodes(models: ModelSet) {
 
   analyzeFileNode.on(Actions.ASK_USER_FEEDBACK, userFeedbackNode);
   analyzeFileNode.on(Actions.DO_REDUCE, reduceHistoryNode);
+  analyzeFileNode.on(Actions.DO_ANALYZE, analyzeFileNode);
 
   userFeedbackNode.on(
     Actions.WAITING_FOR_USER_FEEDBACK,

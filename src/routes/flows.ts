@@ -110,7 +110,6 @@ flows.get("/:runId", async (c) => {
     const { runId } = c.req.param();
 
     const kvStore = await createKVStore(c.env as CloudflareBindings);
-    const models = createModels(c.env as CloudflareBindings);
 
     const result = await FlowManager.getFlowById(kvStore, runId);
     if (!result.exists || !result.shared) {

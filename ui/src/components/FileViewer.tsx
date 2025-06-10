@@ -136,7 +136,6 @@ export function FileViewer({
       {/* File info footer */}
       <div className="p-2 border-t bg-gray-50 text-xs text-gray-500 flex justify-between">
         <span>{content.split("\n").length} lines</span>
-        <span>{new Blob([content]).size} bytes</span>
       </div>
     </div>
   );

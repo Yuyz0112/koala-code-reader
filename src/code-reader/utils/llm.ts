@@ -4,7 +4,7 @@ import {
   analyzeFilePrompt,
   reduceHistoryPrompt,
 } from "./prompts";
-import { SharedStorage, getAnalyzedSummaries } from "./storage";
+import { SharedStorage } from "./storage";
 import { generateText, LanguageModelV1 } from "ai";
 
 function parseMessageToYaml<T = any>(input: string): T {

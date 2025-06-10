@@ -145,7 +145,6 @@ export class FlowManager {
     try {
       console.log(`[FlowManager] Attempting to get or attach flow ${runId}`);
       const flow = await this.getOrAttachFlow(kv, models, runId);
-      console.log({ flow });
       if (!flow) {
         console.log(`[FlowManager] Failed to get or attach flow ${runId}`);
         return;
