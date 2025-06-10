@@ -12,6 +12,7 @@ interface InteractionPanelProps {
   onSendResponse: (response: any) => void;
   disabled?: boolean;
   flowStatus?: {
+    completed?: boolean;
     currentFile?: {
       name: string;
       analysis?: {
@@ -94,11 +95,38 @@ export function InteractionPanel({
   };
 
   if (!requestType) {
+    // Check if flow is completed
+    if (flowStatus?.completed) {
+      return (
+        <Card className="border-green-200 bg-green-50 h-full">
+          <CardHeader>
+            <CardTitle className="text-green-800 flex items-center gap-2">
+              AI Assistant Status
+            </CardTitle>
+            <p className="text-sm text-green-700">
+              Your repository analysis has been completed successfully
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4 text-sm text-green-700">
+              <div className="p-3 bg-white rounded-md border border-green-200">
+                <ul className="space-y-1 text-green-600">
+                  <li>• All repository files have been analyzed</li>
+                  <li>• Summaries and insights have been generated</li>
+                  <li>• Results are ready for review</li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
     return (
       <Card className="border-gray-200 bg-gray-50 h-full">
         <CardHeader>
           <CardTitle className="text-gray-800 flex items-center gap-2">
-            🤖 AI Assistant Status
+            AI Assistant Status
           </CardTitle>
           <p className="text-sm text-gray-600">
             The AI is currently working on your analysis

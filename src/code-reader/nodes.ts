@@ -114,43 +114,80 @@ export class AnalyzeFileNode extends Node {
     | null
     | { needsRegeneration: true; reason: string }
   > {
-    const targetFileName =
-      prepRes.userFeedback?.action === "reject"
-        ? prepRes.currentFile?.name
-        : prepRes.nextFile?.name;
+    let targetFileName: string | undefined;
+    let toAnalyzeContent: string;
 
-    if (!targetFileName) {
-      throw new Error("No file specified for analysis");
+    if (prepRes.userFeedback?.action === "reject") {
+      // Any reject feedback: let LLM choose a new file
+      // Call LLM with empty content to get new file suggestion
+      const result = await this.llm.analyzeFile(prepRes, "");
+
+      if ("analysis_complete" in result) {
+        return null;
+      }
+
+      targetFileName = result.next_focus_proposal.next_filename;
+
+      // Validate the suggested file exists and hasn't been analyzed
+      const targetFileExists = prepRes.basic.files.some(
+        (file) => file.path === targetFileName
+      );
+      if (!targetFileExists) {
+        return {
+          needsRegeneration: true,
+          reason:
+            "LLM suggested file not found in available files, requesting regeneration",
+        };
+      }
+
+      const targetFile = prepRes.basic.files.find(
+        (file) => file.path === targetFileName
+      );
+      if (targetFile?.status === "done" && targetFile.summary) {
+        return {
+          needsRegeneration: true,
+          reason:
+            "LLM suggested file has already been analyzed, please select a different file",
+        };
+      }
+
+      // File is valid, load content for analysis
+      toAnalyzeContent = await readFileFromStorage(targetFileName, prepRes);
+    } else {
+      // Normal flow - use next file
+      targetFileName = prepRes.nextFile?.name;
+
+      if (!targetFileName) {
+        throw new Error("No file specified for analysis");
+      }
+
+      // Validate the file exists and hasn't been analyzed
+      const targetFileExists = prepRes.basic.files.some(
+        (file) => file.path === targetFileName
+      );
+      if (!targetFileExists) {
+        return {
+          needsRegeneration: true,
+          reason: "File not found in available files, requesting regeneration",
+        };
+      }
+
+      const targetFile = prepRes.basic.files.find(
+        (file) => file.path === targetFileName
+      );
+      if (targetFile?.status === "done" && targetFile.summary) {
+        return {
+          needsRegeneration: true,
+          reason:
+            "File has already been analyzed, please select a different file",
+        };
+      }
+
+      // File is valid, load content for analysis
+      toAnalyzeContent = await readFileFromStorage(targetFileName, prepRes);
     }
 
-    // Check if the target file exists in shared.files
-    const targetFileExists = prepRes.basic.files.some(
-      (file) => file.path === targetFileName
-    );
-    if (!targetFileExists) {
-      // File doesn't exist in shared.files, need to regenerate
-      return {
-        needsRegeneration: true,
-        reason: "File not found in available files, requesting regeneration",
-      };
-    }
-
-    // Check if the file has already been analyzed (status is "done")
-    const targetFile = prepRes.basic.files.find(
-      (file) => file.path === targetFileName
-    );
-    if (targetFile?.status === "done" && targetFile.summary) {
-      // File already analyzed, need to regenerate to select a different file
-      return {
-        needsRegeneration: true,
-        reason:
-          "File has already been analyzed, please select a different file",
-      };
-    }
-
-    // File exists but not analyzed yet, proceed with analysis
-    const toAnalyzeContent = await readFileFromStorage(targetFileName, prepRes);
-
+    // Analyze the file content
     const result = await this.llm.analyzeFile(prepRes, toAnalyzeContent);
 
     if ("analysis_complete" in result) {
