@@ -11,6 +11,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 import { RepoSetup, AnalysisData } from "@/types";
 import { ArrowLeft } from "lucide-react";
+import { Markdown } from "@/components/Markdown";
 
 function App() {
   const [analysisData, setAnalysisData] = useState<AnalysisData>({
@@ -205,9 +206,7 @@ function App() {
                       <h3 className="text-lg font-semibold mb-4">
                         Analysis Summary
                       </h3>
-                      <pre className="whitespace-pre-wrap text-sm">
-                        {analysisData.reducedOutput}
-                      </pre>
+                      <Markdown>{analysisData.reducedOutput}</Markdown>
                     </div>
                   ) : (
                     <div className="text-center py-12 text-gray-500">

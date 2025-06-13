@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChevronRight, ChevronDown, FileText, Folder } from "lucide-react";
+import { Markdown } from "@/components/Markdown";
 
 interface FileSummaryListProps {
   files: FileItem[];
@@ -25,11 +26,14 @@ export function FileSummaryList({ files, onFileSelect }: FileSummaryListProps) {
   const getInitialExpanded = () => {
     const expanded = new Set<string>();
     const commonDirs = ["src", "lib", "components", "utils", "pages", "app"];
-    
+
     files.forEach((file) => {
       const pathParts = file.path.split("/");
       // Expand common directories and directories with analyzed files
-      if (pathParts.length > 1 && (commonDirs.includes(pathParts[0]) || file.summary)) {
+      if (
+        pathParts.length > 1 &&
+        (commonDirs.includes(pathParts[0]) || file.summary)
+      ) {
         for (let i = 1; i < pathParts.length; i++) {
           const dirPath = pathParts.slice(0, i).join("/");
           if (dirPath) {
@@ -60,7 +64,7 @@ export function FileSummaryList({ files, onFileSelect }: FileSummaryListProps) {
   const buildTree = (): TreeNode => {
     // Show all files, not just those with summaries
     const allFiles = files;
-    
+
     const root: TreeNode = {
       name: "",
       path: "",
@@ -145,29 +149,35 @@ export function FileSummaryList({ files, onFileSelect }: FileSummaryListProps) {
                   }}
                   className="mr-2 p-0.5 h-6 w-6 text-gray-500 hover:text-gray-700"
                 >
-                  {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                  {isExpanded ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
                 </Button>
               )}
               {(!hasChildren || child.type === "file") && (
                 <span className="mr-2 w-6"></span>
               )}
-              
+
               {child.type === "directory" ? (
                 <Folder className="h-4 w-4 mr-2 text-blue-500" />
               ) : (
                 <FileText className="h-4 w-4 mr-2 text-green-500" />
               )}
-              
-              <span className={`text-sm font-mono font-medium ${
-                child.status === "ignored" 
-                  ? "text-gray-400 line-through" 
-                  : child.status === "done" 
-                  ? "text-gray-700" 
-                  : "text-gray-600"
-              }`}>
+
+              <span
+                className={`text-sm font-mono font-medium ${
+                  child.status === "ignored"
+                    ? "text-gray-400 line-through"
+                    : child.status === "done"
+                    ? "text-gray-700"
+                    : "text-gray-600"
+                }`}
+              >
                 {child.type === "directory" ? `${child.name}/` : child.name}
               </span>
-              
+
               {child.type === "file" && (
                 <>
                   {child.status === "done" && child.summary && (
@@ -188,17 +198,19 @@ export function FileSummaryList({ files, onFileSelect }: FileSummaryListProps) {
                 </>
               )}
             </div>
-            
+
             {/* Show summary only for analyzed files */}
-            {child.type === "file" && child.status === "done" && child.summary && (
-              <Card className="ml-6 mt-2 border-l-4 border-l-green-500">
-                <CardContent className="p-4">
-                  <div className="text-sm text-gray-600 whitespace-pre-wrap">
-                    {child.summary}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            {child.type === "file" &&
+              child.status === "done" &&
+              child.summary && (
+                <Card className="ml-6 mt-2 border-l-4 border-l-green-500">
+                  <CardContent className="p-4">
+                    <Markdown className="text-sm text-gray-600">
+                      {child.summary}
+                    </Markdown>
+                  </CardContent>
+                </Card>
+              )}
           </div>
         );
       } else {
@@ -217,7 +229,11 @@ export function FileSummaryList({ files, onFileSelect }: FileSummaryListProps) {
                 onClick={() => toggleExpanded(child.path)}
                 className="mr-2 p-0.5 h-6 w-6 text-gray-500 hover:text-gray-700"
               >
-                {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                {isExpanded ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
               </Button>
             )}
             {!hasChildren && <span className="mr-2 w-6"></span>}
@@ -239,9 +255,9 @@ export function FileSummaryList({ files, onFileSelect }: FileSummaryListProps) {
   };
 
   const tree = buildTree();
-  const filesWithSummaries = files.filter(file => file.summary);
-  const pendingFiles = files.filter(file => file.status === "pending");
-  const ignoredFiles = files.filter(file => file.status === "ignored");
+  const filesWithSummaries = files.filter((file) => file.summary);
+  const pendingFiles = files.filter((file) => file.status === "pending");
+  const ignoredFiles = files.filter((file) => file.status === "ignored");
 
   if (files.length === 0) {
     return (
@@ -264,10 +280,11 @@ export function FileSummaryList({ files, onFileSelect }: FileSummaryListProps) {
           </span>
           <div className="text-xs text-gray-500 text-right">
             <div>
-              {filesWithSummaries.length} analyzed, {pendingFiles.length} pending, {ignoredFiles.length} ignored
+              {filesWithSummaries.length} analyzed, {pendingFiles.length}{" "}
+              pending, {ignoredFiles.length} ignored
             </div>
             <div className="mt-0.5">
-              {files.length} total file{files.length !== 1 ? 's' : ''}
+              {files.length} total file{files.length !== 1 ? "s" : ""}
             </div>
           </div>
         </div>
@@ -276,9 +293,7 @@ export function FileSummaryList({ files, onFileSelect }: FileSummaryListProps) {
         </div>
       </div>
       <ScrollArea className="flex-1 p-3">
-        <div className="space-y-2">
-          {renderNode(tree)}
-        </div>
+        <div className="space-y-2">{renderNode(tree)}</div>
       </ScrollArea>
     </div>
   );

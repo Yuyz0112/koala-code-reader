@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { RequestType } from "@/types";
 import { CheckCircle, XCircle, Edit3 } from "lucide-react";
+import { Markdown } from "@/components/Markdown";
 
 interface InteractionPanelProps {
   requestType: RequestType;
@@ -241,9 +242,9 @@ export function InteractionPanel({
               <p className="text-sm font-medium text-gray-700">
                 Current AI Analysis:
               </p>
-              <p className="text-sm text-gray-600 mt-1">
+              <Markdown className="text-sm text-gray-600 mt-1">
                 {requestData.message}
-              </p>
+              </Markdown>
             </div>
           )}
 
@@ -323,7 +324,9 @@ export function InteractionPanel({
             <p className="text-sm font-medium text-gray-700">
               {requestType === "user_feedback" ? "AI Analysis:" : "AI Message:"}
             </p>
-            <p className="text-sm text-gray-600 mt-1">{requestData.message}</p>
+            <Markdown className="text-sm text-gray-600 mt-1">
+              {requestData.message}
+            </Markdown>
           </div>
         )}
 
