@@ -267,6 +267,18 @@ export function InteractionPanel({
                 rows={6}
                 required
               />
+              {feedbackMode === "refine" && requestData?.message && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setResponse(requestData.message)}
+                  disabled={disabled}
+                  className="mt-2"
+                >
+                  Copy AI Analysis as Starting Point
+                </Button>
+              )}
             </div>
 
             <div className="flex gap-2">
