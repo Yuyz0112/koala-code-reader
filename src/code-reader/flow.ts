@@ -12,6 +12,7 @@ import {
 import { SharedStorage } from "./utils/storage";
 import { PersistedFlow, KVStore } from "./persisted-flow";
 import { LLM, ModelSet } from "./utils/llm";
+import { readFileFromStorage } from "./utils/fs";
 
 const MAX_RETRIES = 3;
 
@@ -23,7 +24,12 @@ export function createFlowNodes(models: ModelSet, runid: string) {
   const improveBasicInputNode = new ImproveBasicInputNode(runid, MAX_RETRIES);
   const waitingForBasicInputImprovementNode =
     new WaitingForBasicInputImprovementNode(runid, MAX_RETRIES);
-  const analyzeFileNode = new AnalyzeFileNode(llm, runid, MAX_RETRIES);
+  const analyzeFileNode = new AnalyzeFileNode(
+    llm,
+    readFileFromStorage,
+    runid,
+    MAX_RETRIES
+  );
   const userFeedbackNode = new UserFeedbackNode(runid, MAX_RETRIES);
   const waitingForUserFeedbackNode = new WaitingForUserFeedbackNode(
     runid,

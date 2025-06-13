@@ -1,7 +1,6 @@
 import { Node } from "pocketflow";
-import { SharedStorage } from "./utils/storage";
+import { FileItem, SharedStorage } from "./utils/storage";
 import { LLM } from "./utils/llm";
-import { readFileFromStorage } from "./utils/fs";
 
 export enum Actions {
   IMPROVE_BASIC_INPUT = "improveBasicInput",
@@ -98,11 +97,24 @@ export class ImproveBasicInputNode extends Node {
 
 export class AnalyzeFileNode extends Node {
   llm: LLM;
+  readFileFromStorage: (
+    filePath: string,
+    storage: { basic: SharedStorage["basic"] }
+  ) => Promise<string>;
   runId: string;
 
-  constructor(llm: LLM, runId: string, maxRetries?: number) {
+  constructor(
+    llm: LLM,
+    readFileFromStorage: (
+      filePath: string,
+      storage: { basic: SharedStorage["basic"] }
+    ) => Promise<string>,
+    runId: string,
+    maxRetries?: number
+  ) {
     super(maxRetries);
     this.llm = llm;
+    this.readFileFromStorage = readFileFromStorage;
     this.runId = runId;
   }
 
@@ -116,6 +128,115 @@ export class AnalyzeFileNode extends Node {
       nextFile: shared.nextFile,
       currentFile: shared.currentFile,
       userFeedback: shared.userFeedback,
+    };
+  }
+
+  // Step 1 in exec: Determine target file name from user feedback or nextFile
+  private getTargetFileName(
+    prepRes: Pick<
+      SharedStorage,
+      "basic" | "nextFile" | "currentFile" | "userFeedback"
+    >
+  ): string | null {
+    if (prepRes.userFeedback?.action === "reject") {
+      // User rejected current analysis, re-analyze the same file with reject reason
+      const currentFileName = prepRes.currentFile?.name;
+      console.log(
+        `[${this.runId}] AnalyzeFileNode: Processing reject feedback, re-analyzing current file: ${currentFileName}`
+      );
+
+      if (!currentFileName) {
+        throw new Error("No current file to re-analyze after reject feedback");
+      }
+
+      return currentFileName;
+    } else {
+      // Normal flow - use next file
+      const targetFileName = prepRes.nextFile?.name;
+      console.log(
+        `[${this.runId}] AnalyzeFileNode: Processing normal flow for file: ${targetFileName}`
+      );
+
+      if (!targetFileName) {
+        throw new Error("No file specified for analysis");
+      }
+
+      return targetFileName;
+    }
+  }
+
+  // Step 2 in exec: Validate target file exists and hasn't been analyzed yet
+  private validateFile(
+    fileName: string,
+    files: FileItem[]
+  ): { error?: string } {
+    const targetFile = files.find((file) => file.path === fileName);
+
+    if (!targetFile) {
+      return {
+        error: "File not found in available files, requesting regeneration",
+      };
+    }
+
+    if (targetFile.status === "done" && targetFile.summary) {
+      return {
+        error: "File has already been analyzed, please select a different file",
+      };
+    }
+
+    return {};
+  }
+
+  // Step 3 in exec: Read file content and call LLM to analyze, return analysis result or completion
+  private async analyzeFileContent(
+    prepRes: Pick<SharedStorage, "basic" | "nextFile" | "userFeedback">,
+    targetFileName: string
+  ): Promise<Pick<SharedStorage, "currentFile" | "nextFile"> | null> {
+    console.log(
+      `[${this.runId}] AnalyzeFileNode: Starting file content read for ${targetFileName}`
+    );
+
+    const toAnalyzeContent = await this.readFileFromStorage(
+      targetFileName,
+      prepRes
+    );
+
+    console.log(
+      `[${this.runId}] AnalyzeFileNode: File content read completed, size: ${toAnalyzeContent.length} chars`
+    );
+
+    console.log(
+      `[${this.runId}] AnalyzeFileNode: Starting LLM analysis for ${targetFileName}`
+    );
+
+    const result = await this.llm.analyzeFile(prepRes, toAnalyzeContent);
+
+    console.log(
+      `[${this.runId}] AnalyzeFileNode: LLM analysis completed for ${targetFileName}`
+    );
+
+    if ("analysis_complete" in result) {
+      console.log(
+        `[${this.runId}] AnalyzeFileNode: Analysis marked as complete by LLM`
+      );
+      return null;
+    }
+
+    console.log(
+      `[${this.runId}] AnalyzeFileNode: Analysis successful, next file: ${result.next_focus_proposal.next_filename}`
+    );
+
+    return {
+      currentFile: {
+        name: result.current_analysis.filename,
+        analysis: {
+          summary: result.current_analysis.summary,
+        },
+      },
+      nextFile: {
+        name: result.next_focus_proposal.next_filename,
+        reason: result.next_focus_proposal.reason,
+      },
     };
   }
 
@@ -133,153 +254,28 @@ export class AnalyzeFileNode extends Node {
       `[${this.runId}] AnalyzeFileNode.exec: Starting file analysis process`
     );
 
-    let targetFileName: string | undefined;
-    let toAnalyzeContent: string;
+    // Step 1: Get target file name
+    const targetFileName = this.getTargetFileName(prepRes);
 
-    if (prepRes.userFeedback?.action === "reject") {
-      console.log(
-        `[${this.runId}] AnalyzeFileNode.exec: Processing reject feedback, requesting new file from LLM`
-      );
-
-      // Any reject feedback: let LLM choose a new file
-      // Call LLM with empty content to get new file suggestion
-      const result = await this.llm.analyzeFile(prepRes, "");
-
-      console.log(
-        `[${this.runId}] AnalyzeFileNode.exec: LLM call for new file selection completed`
-      );
-
-      if ("analysis_complete" in result) {
-        console.log(
-          `[${this.runId}] AnalyzeFileNode.exec: Analysis marked as complete by LLM`
-        );
-        return null;
-      }
-
-      targetFileName = result.next_focus_proposal.next_filename;
-      console.log(
-        `[${this.runId}] AnalyzeFileNode.exec: LLM suggested file: ${targetFileName}`
-      );
-
-      // Validate the suggested file exists and hasn't been analyzed
-      const targetFileExists = prepRes.basic.files.some(
-        (file) => file.path === targetFileName
-      );
-      if (!targetFileExists) {
-        console.log(
-          `[${this.runId}] AnalyzeFileNode.exec: LLM suggested file not found in available files`
-        );
-        return {
-          needsRegeneration: true,
-          reason:
-            "LLM suggested file not found in available files, requesting regeneration",
-        };
-      }
-
-      const targetFile = prepRes.basic.files.find(
-        (file) => file.path === targetFileName
-      );
-      if (targetFile?.status === "done" && targetFile.summary) {
-        console.log(
-          `[${this.runId}] AnalyzeFileNode.exec: LLM suggested file already analyzed`
-        );
-        return {
-          needsRegeneration: true,
-          reason:
-            "LLM suggested file has already been analyzed, please select a different file",
-        };
-      }
-
-      // File is valid, load content for analysis
-      console.log(
-        `[${this.runId}] AnalyzeFileNode.exec: Starting file content read for ${targetFileName}`
-      );
-      toAnalyzeContent = await readFileFromStorage(targetFileName, prepRes);
-      console.log(
-        `[${this.runId}] AnalyzeFileNode.exec: File content read completed, size: ${toAnalyzeContent.length} chars`
-      );
-    } else {
-      // Normal flow - use next file
-      targetFileName = prepRes.nextFile?.name;
-      console.log(
-        `[${this.runId}] AnalyzeFileNode.exec: Processing normal flow for file: ${targetFileName}`
-      );
-
-      if (!targetFileName) {
-        throw new Error("No file specified for analysis");
-      }
-
-      // Validate the file exists and hasn't been analyzed
-      const targetFileExists = prepRes.basic.files.some(
-        (file) => file.path === targetFileName
-      );
-      if (!targetFileExists) {
-        console.log(
-          `[${this.runId}] AnalyzeFileNode.exec: Target file not found in available files`
-        );
-        return {
-          needsRegeneration: true,
-          reason: "File not found in available files, requesting regeneration",
-        };
-      }
-
-      const targetFile = prepRes.basic.files.find(
-        (file) => file.path === targetFileName
-      );
-      if (targetFile?.status === "done" && targetFile.summary) {
-        console.log(
-          `[${this.runId}] AnalyzeFileNode.exec: Target file already analyzed`
-        );
-        return {
-          needsRegeneration: true,
-          reason:
-            "File has already been analyzed, please select a different file",
-        };
-      }
-
-      // File is valid, load content for analysis
-      console.log(
-        `[${this.runId}] AnalyzeFileNode.exec: Starting file content read for ${targetFileName}`
-      );
-      toAnalyzeContent = await readFileFromStorage(targetFileName, prepRes);
-      console.log(
-        `[${this.runId}] AnalyzeFileNode.exec: File content read completed, size: ${toAnalyzeContent.length} chars`
-      );
-    }
-
-    // Analyze the file content
-    console.log(
-      `[${this.runId}] AnalyzeFileNode.exec: Starting LLM analysis for ${targetFileName}`
-    );
-    const result = await this.llm.analyzeFile(prepRes, toAnalyzeContent);
-    console.log(
-      `[${this.runId}] AnalyzeFileNode.exec: LLM analysis completed for ${targetFileName}`
-    );
-
-    if ("analysis_complete" in result) {
-      // Analysis is complete, no more files to analyze
-      console.log(
-        `[${this.runId}] AnalyzeFileNode.exec: Analysis marked as complete by LLM`
-      );
+    if (targetFileName === null) {
+      // Analysis complete
       return null;
     }
 
-    console.log(
-      `[${this.runId}] AnalyzeFileNode.exec: Analysis successful, next file: ${result.next_focus_proposal.next_filename}`
-    );
-    // Continue with next file
-    return {
-      currentFile: {
-        name: result.current_analysis.filename,
-        analysis: {
-          summary: result.current_analysis.summary,
-        },
-      },
-      nextFile: {
-        name: result.next_focus_proposal.next_filename,
-        reason: result.next_focus_proposal.reason,
-      },
-    };
+    // Step 2: Validate the target file
+    const validation = this.validateFile(targetFileName, prepRes.basic.files);
+    if (validation.error) {
+      console.log(
+        `[${this.runId}] AnalyzeFileNode.exec: File validation failed: ${validation.error}`
+      );
+      return {
+        needsRegeneration: true,
+        reason: validation.error,
+      };
+    }
+
+    // Step 3: Analyze file content
+    return await this.analyzeFileContent(prepRes, targetFileName);
   }
 
   async post(
@@ -379,7 +375,7 @@ export class ReduceHistoryNode extends Node {
     >
   ): Promise<
     Pick<SharedStorage, "reducedOutput" | "summariesBuffer"> & {
-      updatedFiles: any[];
+      updatedFiles: FileItem[];
     }
   > {
     console.log(
@@ -471,7 +467,7 @@ export class ReduceHistoryNode extends Node {
     shared: SharedStorage,
     _: unknown,
     execRes: Pick<SharedStorage, "reducedOutput" | "summariesBuffer"> & {
-      updatedFiles: any[];
+      updatedFiles: FileItem[];
     }
   ): Promise<string | undefined> {
     shared.reducedOutput = execRes.reducedOutput;

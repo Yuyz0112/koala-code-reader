@@ -17,12 +17,10 @@ interface GitHubFileContent {
 
 export async function readFile(path: string): Promise<string> {
   try {
-    console.log("Reading file from:", path);
     const response = await fetch(path);
     if (!response.ok) {
       throw new Error(`Failed to fetch file: ${response.statusText}`);
     }
-    console.log("File read successfully");
     return await response.text();
   } catch (error) {
     throw error;
@@ -51,35 +49,32 @@ export async function readFromGithub(
     if (ref && ref !== "main") {
       apiUrl += `?ref=${encodeURIComponent(ref)}`;
     }
-    
-    console.log(`Reading from GitHub API (${ref}):`, apiUrl);
 
     const response = await fetch(apiUrl, {
       headers: {
-        'Accept': 'application/vnd.github.v3+json',
-        'User-Agent': 'Koala-Code-Reader'
-      }
+        Accept: "application/vnd.github.v3+json",
+        "User-Agent": "Koala-Code-Reader",
+      },
     });
 
     if (response.ok) {
-      const data = await response.json() as GitHubFileContent;
-      
+      const data = (await response.json()) as GitHubFileContent;
+
       // Check if it's a file (not a directory)
-      if (data.type !== 'file') {
+      if (data.type !== "file") {
         throw new Error(`Path ${cleanPath} is not a file`);
       }
-      
+
       // GitHub API returns base64 encoded content
-      if (data.encoding === 'base64') {
+      if (data.encoding === "base64") {
         // Use atob in browser environment, Buffer in Node.js environment
         let content: string;
         try {
-          content = atob(data.content.replace(/\s/g, ''));
+          content = atob(data.content.replace(/\s/g, ""));
         } catch (e) {
           // If atob is not available, try using Buffer (Node.js environment)
-          content = Buffer.from(data.content, 'base64').toString('utf-8');
+          content = Buffer.from(data.content, "base64").toString("utf-8");
         }
-        console.log("File read successfully from GitHub API");
         return content;
       } else {
         throw new Error(`Unsupported encoding: ${data.encoding}`);
@@ -107,13 +102,7 @@ export async function readFileFromStorage(
 
   // If GitHub URL is available, read from GitHub first
   if (githubUrl) {
-    try {
-      return await readFromGithub(githubUrl, filePath, githubRef);
-    } catch (error) {
-      console.log("Failed to read from GitHub, falling back to local:", error);
-      // Fall back to local reading when GitHub reading fails
-      return await readFile(filePath);
-    }
+    return await readFromGithub(githubUrl, filePath, githubRef);
   } else {
     // Read directly from local when no GitHub URL is available
     return await readFile(filePath);

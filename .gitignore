@@ -35,3 +35,6 @@ lerna-debug.log*
 
 # ts
 tsconfig.tsbuildinfo
+
+# test
+coverage/
