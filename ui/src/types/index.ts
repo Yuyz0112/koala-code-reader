@@ -1,9 +1,9 @@
 import { FileItem } from "@/lib/api-client";
 
 export interface AnalysisData {
-  fileSummaries: Array<{
+  fileUnderstandings: Array<{
     filename: string;
-    summary: string;
+    understanding: string;
   }>;
   reducedOutput: string;
 }

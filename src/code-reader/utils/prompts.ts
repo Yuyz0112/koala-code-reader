@@ -1,7 +1,7 @@
 import {
   SharedStorage,
   generateFileStructureWithStatus,
-  getAnalyzedSummaries,
+  getAnalyzedUnderstandings,
 } from "./storage";
 
 export const getEntryFilePrompt = ({
@@ -68,7 +68,7 @@ export const analyzeFilePrompt = (
   }: Pick<SharedStorage, "basic" | "nextFile" | "currentFile" | "userFeedback">,
   toAnalyzeContent: string
 ) => {
-  const allSummaries = getAnalyzedSummaries(basic.files);
+  const allUnderstandings = getAnalyzedUnderstandings(basic.files);
   // Determine the analysis scenario based on userFeedback
   let analysisScenario = "";
   let instructions = "";
@@ -111,9 +111,9 @@ User's rejection reason: ${userFeedback.reason}`;
     }
 User provided refined understanding for ${currentFile?.name || "previous file"}:
 - Original AI Analysis: ${
-      currentFile?.analysis?.summary || "No previous analysis"
+      currentFile?.analysis?.understanding || "No previous analysis"
     }
-- User's Refined Understanding: ${userFeedback.userSummary}
+- User's Refined Understanding: ${userFeedback.userUnderstanding}
 - User's Reason: ${userFeedback.reason || "No specific reason provided"}`;
 
     instructions = `1. **Acknowledge and incorporate** the user's refined understanding from the previous file
@@ -139,16 +139,16 @@ ${generateFileStructureWithStatus(basic.files)}
 
 <AnalysisHistory>
 ${
-  allSummaries && allSummaries.length > 0
+  allUnderstandings && allUnderstandings.length > 0
     ? `Files analyzed so far (${
-        allSummaries.length
+        allUnderstandings.length
       } files), DO NOT propose to re-read these files:
-${allSummaries
-  .map((summary, index) => `${index + 1}. ${summary.filename}`)
+${allUnderstandings
+  .map((understanding, index) => `${index + 1}. ${understanding.filename}`)
   .join("\n")}
 
 Progress: You have analyzed ${
-        allSummaries.length
+        allUnderstandings.length
       } files. Consider whether this provides sufficient understanding for the main goal or if more files are needed.
 
 **CRITICAL**: These files have already been analyzed and summarized. DO NOT propose to re-read any of these files. The analysis above represents the complete understanding from these files.`
@@ -215,13 +215,13 @@ Analyze the file and provide your assessment:`;
 export const reduceHistoryPrompt = ({
   basic,
   reducedOutput,
-  summariesBuffer,
+  understandingsBuffer,
   userFeedback,
 }: Pick<
   SharedStorage,
-  "basic" | "reducedOutput" | "summariesBuffer" | "userFeedback"
+  "basic" | "reducedOutput" | "understandingsBuffer" | "userFeedback"
 >) => {
-  const allSummaries = getAnalyzedSummaries(basic.files);
+  const allUnderstandings = getAnalyzedUnderstandings(basic.files);
 
   return `You are a code analysis assistant responsible for maintaining a consolidated understanding of a codebase analysis.
 
@@ -245,8 +245,8 @@ ${reducedOutput}`
 </CurrentReduction>
 
 <NewInformation>
-${summariesBuffer
-  .map((b) => `File: ${b.filename}\nAnalysis: ${b.summary}`)
+${understandingsBuffer
+  .map((b) => `File: ${b.filename}\nAnalysis: ${b.understanding}`)
   .join("\n\n")}
 
 User Feedback: ${userFeedback?.action || "No feedback"}
@@ -259,10 +259,11 @@ ${userFeedback?.action === "accept" ? `(User accepted the analysis)` : ""}
 </NewInformation>
 
 <AllAnalyzedFiles>
-Files analyzed so far (${allSummaries.length} files):
-${allSummaries
+Files analyzed so far (${allUnderstandings.length} files):
+${allUnderstandings
   .map(
-    (summary, index) => `${index + 1}. ${summary.filename}: ${summary.summary}`
+    (understanding, index) =>
+      `${index + 1}. ${understanding.filename}: ${understanding.understanding}`
   )
   .join("\n")}
 </AllAnalyzedFiles>

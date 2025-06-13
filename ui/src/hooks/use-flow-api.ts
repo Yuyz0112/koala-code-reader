@@ -98,7 +98,7 @@ export const useFlowAPI = () => {
                   );
                   setCurrentRequestType("user_feedback");
                   setCurrentRequestData({
-                    message: currentFile?.analysis?.summary,
+                    message: currentFile?.analysis?.understanding,
                     currentFile: currentFile?.name,
                     nextFile: nextFile
                       ? {
@@ -115,12 +115,12 @@ export const useFlowAPI = () => {
                   setCurrentRequestData({
                     message: "Analysis has been completed successfully.",
                     results: {
-                      fileSummaries:
+                      fileUnderstandings:
                         data.shared.basic?.files
-                          ?.filter((f) => f.summary)
+                          ?.filter((f) => f.understanding)
                           .map((f) => ({
                             filename: f.path,
-                            summary: f.summary!,
+                            understanding: f.understanding!,
                           })) || [],
                       reducedOutput: data.shared.reducedOutput,
                     },
@@ -283,7 +283,9 @@ export const useFlowAPI = () => {
         inputData = {
           action: response.action,
           reason: response.reason || "",
-          ...(response.userSummary && { userSummary: response.userSummary }),
+          ...(response.userUnderstanding && {
+            userUnderstanding: response.userUnderstanding,
+          }),
         };
       } else {
         // Handle regular user input

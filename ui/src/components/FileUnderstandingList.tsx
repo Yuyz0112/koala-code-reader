@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ChevronRight, ChevronDown, FileText, Folder } from "lucide-react";
 import { Markdown } from "@/components/Markdown";
 
-interface FileSummaryListProps {
+interface FileUnderstandingListProps {
   files: FileItem[];
   onFileSelect?: (filePath: string) => void;
 }
@@ -16,12 +16,15 @@ interface TreeNode {
   path: string;
   type: "file" | "directory";
   status?: "pending" | "ignored" | "done";
-  summary?: string;
+  understanding?: string;
   children: Map<string, TreeNode>;
   isExplicit: boolean;
 }
 
-export function FileSummaryList({ files, onFileSelect }: FileSummaryListProps) {
+export function FileUnderstandingList({
+  files,
+  onFileSelect,
+}: FileUnderstandingListProps) {
   // Initialize with directories expanded if they contain any files
   const getInitialExpanded = () => {
     const expanded = new Set<string>();
@@ -32,7 +35,7 @@ export function FileSummaryList({ files, onFileSelect }: FileSummaryListProps) {
       // Expand common directories and directories with analyzed files
       if (
         pathParts.length > 1 &&
-        (commonDirs.includes(pathParts[0]) || file.summary)
+        (commonDirs.includes(pathParts[0]) || file.understanding)
       ) {
         for (let i = 1; i < pathParts.length; i++) {
           const dirPath = pathParts.slice(0, i).join("/");
@@ -90,7 +93,7 @@ export function FileSummaryList({ files, onFileSelect }: FileSummaryListProps) {
             path: currentPath,
             type: isLastPart ? file.type : "directory",
             status: isLastPart ? file.status : "pending",
-            summary: isLastPart ? file.summary : undefined,
+            understanding: isLastPart ? file.understanding : undefined,
             children: new Map(),
             isExplicit: isLastPart,
           });
@@ -102,7 +105,7 @@ export function FileSummaryList({ files, onFileSelect }: FileSummaryListProps) {
         if (i === pathParts.length - 1) {
           currentNode.type = file.type;
           currentNode.status = file.status;
-          currentNode.summary = file.summary;
+          currentNode.understanding = file.understanding;
           currentNode.isExplicit = true;
         }
       }
@@ -128,7 +131,7 @@ export function FileSummaryList({ files, onFileSelect }: FileSummaryListProps) {
       const indent = depth * 20; // 20px per level
 
       if (child.isExplicit) {
-        // This is an actual file with summary
+        // This is an actual file with understanding
         elements.push(
           <div key={child.path} className="mb-4">
             <div
@@ -180,7 +183,7 @@ export function FileSummaryList({ files, onFileSelect }: FileSummaryListProps) {
 
               {child.type === "file" && (
                 <>
-                  {child.status === "done" && child.summary && (
+                  {child.status === "done" && child.understanding && (
                     <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
                       ✓ Analyzed
                     </span>
@@ -199,14 +202,14 @@ export function FileSummaryList({ files, onFileSelect }: FileSummaryListProps) {
               )}
             </div>
 
-            {/* Show summary only for analyzed files */}
+            {/* Show understanding only for analyzed files */}
             {child.type === "file" &&
               child.status === "done" &&
-              child.summary && (
+              child.understanding && (
                 <Card className="ml-6 mt-2 border-l-4 border-l-green-500">
                   <CardContent className="p-4">
                     <Markdown className="text-sm text-gray-600">
-                      {child.summary}
+                      {child.understanding}
                     </Markdown>
                   </CardContent>
                 </Card>
@@ -255,7 +258,7 @@ export function FileSummaryList({ files, onFileSelect }: FileSummaryListProps) {
   };
 
   const tree = buildTree();
-  const filesWithSummaries = files.filter((file) => file.summary);
+  const filesWithUnderstandings = files.filter((file) => file.understanding);
   const pendingFiles = files.filter((file) => file.status === "pending");
   const ignoredFiles = files.filter((file) => file.status === "ignored");
 
@@ -276,11 +279,11 @@ export function FileSummaryList({ files, onFileSelect }: FileSummaryListProps) {
       <div className="p-3 bg-gray-50 border-b">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium text-gray-700">
-            File Summaries
+            File Understandings
           </span>
           <div className="text-xs text-gray-500 text-right">
             <div>
-              {filesWithSummaries.length} analyzed, {pendingFiles.length}{" "}
+              {filesWithUnderstandings.length} analyzed, {pendingFiles.length}{" "}
               pending, {ignoredFiles.length} ignored
             </div>
             <div className="mt-0.5">

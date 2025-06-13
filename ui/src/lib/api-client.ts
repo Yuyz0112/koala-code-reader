@@ -6,7 +6,7 @@ export interface FlowStatus {
   currentFile?: {
     name: string;
     analysis?: {
-      summary: string;
+      understanding: string;
     };
   };
   nextFile?: {
@@ -37,7 +37,7 @@ export interface FileItem {
   path: string;
   status: FileStatus;
   type: "file" | "directory";
-  summary?: string; // Analysis summary for analyzed files
+  understanding?: string; // Analysis understanding for analyzed files
 }
 
 export interface StartAnalysisRequest {

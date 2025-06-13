@@ -34,11 +34,11 @@ function createMockSharedStorage(): SharedStorage {
           path: "src/done.ts",
           status: "done",
           type: "file",
-          summary: "Already analyzed",
+          understanding: "Already analyzed",
         },
       ],
     },
-    summariesBuffer: [],
+    understandingsBuffer: [],
     reducedOutput: "",
     completed: false,
   };
@@ -378,7 +378,7 @@ describe("AnalyzeFileNode", () => {
         currentFile: {
           name: "src/index.ts",
           analysis: {
-            summary: "Main entry point of the application",
+            understanding: "Main entry point of the application",
           },
         },
         nextFile: {
@@ -432,7 +432,7 @@ describe("AnalyzeFileNode", () => {
         currentFile: {
           name: "src/index.ts",
           analysis: {
-            summary: "Main entry point",
+            understanding: "Main entry point",
           },
         },
         nextFile: {
@@ -485,7 +485,7 @@ describe("AnalyzeFileNode", () => {
       const execRes = {
         currentFile: {
           name: "src/index.ts",
-          analysis: { summary: "Test summary" },
+          analysis: { understanding: "Test understanding" },
         },
         nextFile: {
           name: "src/utils.ts",
@@ -613,7 +613,7 @@ describe("WaitingForUserFeedbackNode", () => {
     test("should return DO_REDUCE for refined action", async () => {
       sharedStorage.userFeedback = {
         action: "refined",
-        userSummary: "Better summary",
+        userUnderstanding: "Better understanding",
       };
 
       const result = await node.post(sharedStorage, undefined, undefined);
@@ -638,13 +638,13 @@ describe("ReduceHistoryNode", () => {
     sharedStorage.currentFile = {
       name: "src/test.ts",
       analysis: {
-        summary: "Test file analysis summary",
+        understanding: "Test file analysis understanding",
       },
     };
     sharedStorage.userFeedback = {
       action: "accept",
     };
-    sharedStorage.summariesBuffer = [];
+    sharedStorage.understandingsBuffer = [];
     sharedStorage.reducedOutput = "Previous reduced output";
     sharedStorage.completed = false;
   });
@@ -654,7 +654,7 @@ describe("ReduceHistoryNode", () => {
       const result = await node.prep(sharedStorage);
 
       expect(result).toEqual({
-        summariesBuffer: sharedStorage.summariesBuffer,
+        understandingsBuffer: sharedStorage.understandingsBuffer,
         reducedOutput: sharedStorage.reducedOutput,
         currentFile: sharedStorage.currentFile,
         userFeedback: sharedStorage.userFeedback,
@@ -666,17 +666,17 @@ describe("ReduceHistoryNode", () => {
 
   describe("exec", () => {
     describe("user feedback handling", () => {
-      test("should use refined summary when userFeedback action is refined", async () => {
+      test("should use refined understanding when userFeedback action is refined", async () => {
         const prepRes = {
-          summariesBuffer: [],
+          understandingsBuffer: [],
           reducedOutput: "Previous output",
           currentFile: {
             name: sharedStorage.basic.files[0].path,
-            analysis: { summary: "Original summary" },
+            analysis: { understanding: "Original understanding" },
           },
           userFeedback: {
             action: "refined" as const,
-            userSummary: "User improved summary",
+            userUnderstanding: "User improved understanding",
           },
           basic: sharedStorage.basic,
           completed: false,
@@ -684,20 +684,22 @@ describe("ReduceHistoryNode", () => {
 
         const result = await node.exec(prepRes);
 
-        expect(result.updatedFiles[0]?.summary).toBe("User improved summary");
-        expect(prepRes.summariesBuffer).toContainEqual({
+        expect(result.updatedFiles[0]?.understanding).toBe(
+          "User improved understanding"
+        );
+        expect(prepRes.understandingsBuffer).toContainEqual({
           filename: sharedStorage.basic.files[0].path,
-          summary: "User improved summary",
+          understanding: "User improved understanding",
         });
       });
 
-      test("should use original summary when userFeedback action is accept", async () => {
+      test("should use original understanding when userFeedback action is accept", async () => {
         const prepRes = {
-          summariesBuffer: [],
+          understandingsBuffer: [],
           reducedOutput: "Previous output",
           currentFile: {
             name: sharedStorage.basic.files[0].path,
-            analysis: { summary: "Original analysis summary" },
+            analysis: { understanding: "Original analysis understanding" },
           },
           userFeedback: {
             action: "accept" as const,
@@ -708,22 +710,22 @@ describe("ReduceHistoryNode", () => {
 
         const result = await node.exec(prepRes);
 
-        expect(result.updatedFiles[0]?.summary).toBe(
-          "Original analysis summary"
+        expect(result.updatedFiles[0]?.understanding).toBe(
+          "Original analysis understanding"
         );
-        expect(prepRes.summariesBuffer).toContainEqual({
+        expect(prepRes.understandingsBuffer).toContainEqual({
           filename: sharedStorage.basic.files[0].path,
-          summary: "Original analysis summary",
+          understanding: "Original analysis understanding",
         });
       });
 
       test("should throw error for unexpected userFeedback action", async () => {
         const prepRes = {
-          summariesBuffer: [],
+          understandingsBuffer: [],
           reducedOutput: "Previous output",
           currentFile: {
             name: "src/test.ts",
-            analysis: { summary: "Test summary" },
+            analysis: { understanding: "Test understanding" },
           },
           userFeedback: {
             action: "unknown" as any,
@@ -739,11 +741,11 @@ describe("ReduceHistoryNode", () => {
 
       test("should throw error when userFeedback is missing", async () => {
         const prepRes = {
-          summariesBuffer: [],
+          understandingsBuffer: [],
           reducedOutput: "Previous output",
           currentFile: {
             name: "src/test.ts",
-            analysis: { summary: "Test summary" },
+            analysis: { understanding: "Test understanding" },
           },
           userFeedback: undefined,
           basic: sharedStorage.basic,
@@ -757,13 +759,13 @@ describe("ReduceHistoryNode", () => {
     });
 
     describe("file status updates", () => {
-      test("should update file status to done and add summary to buffer", async () => {
+      test("should update file status to done and add understanding to buffer", async () => {
         const prepRes = {
-          summariesBuffer: [],
+          understandingsBuffer: [],
           reducedOutput: "Previous output",
           currentFile: {
             name: "src/index.ts",
-            analysis: { summary: "Index file summary" },
+            analysis: { understanding: "Index file understanding" },
           },
           userFeedback: {
             action: "accept" as const,
@@ -796,19 +798,19 @@ describe("ReduceHistoryNode", () => {
           path: "src/index.ts",
           status: "done",
           type: "file",
-          summary: "Index file summary",
+          understanding: "Index file understanding",
         });
 
         // Check buffer addition
-        expect(prepRes.summariesBuffer).toContainEqual({
+        expect(prepRes.understandingsBuffer).toContainEqual({
           filename: "src/index.ts",
-          summary: "Index file summary",
+          understanding: "Index file understanding",
         });
       });
 
       test("should handle case when currentFile is missing", async () => {
         const prepRes = {
-          summariesBuffer: [],
+          understandingsBuffer: [],
           reducedOutput: "Previous output",
           currentFile: undefined,
           userFeedback: {
@@ -821,17 +823,17 @@ describe("ReduceHistoryNode", () => {
         const result = await node.exec(prepRes);
 
         // Should not add anything to buffer when currentFile is missing
-        expect(prepRes.summariesBuffer).toHaveLength(0);
-        expect(result.summariesBuffer).toHaveLength(0);
+        expect(prepRes.understandingsBuffer).toHaveLength(0);
+        expect(result.understandingsBuffer).toHaveLength(0);
       });
 
       test("should handle case when file is not found in files array", async () => {
         const prepRes = {
-          summariesBuffer: [],
+          understandingsBuffer: [],
           reducedOutput: "Previous output",
           currentFile: {
             name: "src/missing.ts",
-            analysis: { summary: "Missing file summary" },
+            analysis: { understanding: "Missing file understanding" },
           },
           userFeedback: {
             action: "accept" as const,
@@ -852,9 +854,9 @@ describe("ReduceHistoryNode", () => {
         const result = await node.exec(prepRes);
 
         // Should still add to buffer even if file not found in array
-        expect(prepRes.summariesBuffer).toContainEqual({
+        expect(prepRes.understandingsBuffer).toContainEqual({
           filename: "src/missing.ts",
-          summary: "Missing file summary",
+          understanding: "Missing file understanding",
         });
 
         // Original files array should remain unchanged
@@ -867,14 +869,14 @@ describe("ReduceHistoryNode", () => {
     describe("LLM call decision logic", () => {
       test("should skip LLM call when buffer is not full and analysis not completed", async () => {
         const prepRes = {
-          summariesBuffer: [
-            { filename: "file1.ts", summary: "Summary 1" },
-            { filename: "file2.ts", summary: "Summary 2" },
+          understandingsBuffer: [
+            { filename: "file1.ts", understanding: "Understanding 1" },
+            { filename: "file2.ts", understanding: "Understanding 2" },
           ],
           reducedOutput: "Previous output",
           currentFile: {
             name: "src/test.ts",
-            analysis: { summary: "Test summary" },
+            analysis: { understanding: "Test understanding" },
           },
           userFeedback: {
             action: "accept" as const,
@@ -890,21 +892,21 @@ describe("ReduceHistoryNode", () => {
 
         // Should return original reducedOutput and keep buffer
         expect(result.reducedOutput).toBe("Previous output");
-        expect(result.summariesBuffer).toHaveLength(3); // 2 existing + 1 new
+        expect(result.understandingsBuffer).toHaveLength(3); // 2 existing + 1 new
       });
 
       test("should call LLM when buffer is full (>=5)", async () => {
         const prepRes = {
-          summariesBuffer: [
-            { filename: "file1.ts", summary: "Summary 1" },
-            { filename: "file2.ts", summary: "Summary 2" },
-            { filename: "file3.ts", summary: "Summary 3" },
-            { filename: "file4.ts", summary: "Summary 4" },
+          understandingsBuffer: [
+            { filename: "file1.ts", understanding: "Understanding 1" },
+            { filename: "file2.ts", understanding: "Understanding 2" },
+            { filename: "file3.ts", understanding: "Understanding 3" },
+            { filename: "file4.ts", understanding: "Understanding 4" },
           ],
           reducedOutput: "Previous output",
           currentFile: {
             name: "src/test.ts",
-            analysis: { summary: "Test summary" },
+            analysis: { understanding: "Test understanding" },
           },
           userFeedback: {
             action: "accept" as const,
@@ -923,25 +925,27 @@ describe("ReduceHistoryNode", () => {
         expect(mockLLM.reduceHistory).toHaveBeenCalledWith({
           basic: { ...prepRes.basic, files: expect.any(Array) },
           reducedOutput: "Previous output",
-          summariesBuffer: expect.arrayContaining([
-            { filename: "file1.ts", summary: "Summary 1" },
-            { filename: "src/test.ts", summary: "Test summary" },
+          understandingsBuffer: expect.arrayContaining([
+            { filename: "file1.ts", understanding: "Understanding 1" },
+            { filename: "src/test.ts", understanding: "Test understanding" },
           ]),
           userFeedback: prepRes.userFeedback,
         });
 
         // Should return new reduced output and clear buffer
         expect(result.reducedOutput).toBe("New reduced output");
-        expect(result.summariesBuffer).toHaveLength(0);
+        expect(result.understandingsBuffer).toHaveLength(0);
       });
 
       test("should call LLM when analysis is completed even with partial buffer", async () => {
         const prepRes = {
-          summariesBuffer: [{ filename: "file1.ts", summary: "Summary 1" }],
+          understandingsBuffer: [
+            { filename: "file1.ts", understanding: "Understanding 1" },
+          ],
           reducedOutput: "Previous output",
           currentFile: {
             name: "src/test.ts",
-            analysis: { summary: "Test summary" },
+            analysis: { understanding: "Test understanding" },
           },
           userFeedback: {
             action: "accept" as const,
@@ -959,16 +963,16 @@ describe("ReduceHistoryNode", () => {
         // Should call LLM even with partial buffer when completed
         expect(mockLLM.reduceHistory).toHaveBeenCalled();
         expect(result.reducedOutput).toBe("Final reduced output");
-        expect(result.summariesBuffer).toHaveLength(0);
+        expect(result.understandingsBuffer).toHaveLength(0);
       });
 
-      test("should handle empty summariesBuffer with LLM call", async () => {
+      test("should handle empty understandingsBuffer with LLM call", async () => {
         const prepRes = {
-          summariesBuffer: [],
+          understandingsBuffer: [],
           reducedOutput: "Previous output",
           currentFile: {
             name: "src/test.ts",
-            analysis: { summary: "Test summary" },
+            analysis: { understanding: "Test understanding" },
           },
           userFeedback: {
             action: "accept" as const,
@@ -986,8 +990,8 @@ describe("ReduceHistoryNode", () => {
         expect(mockLLM.reduceHistory).toHaveBeenCalledWith({
           basic: expect.any(Object),
           reducedOutput: "Previous output",
-          summariesBuffer: [
-            { filename: "src/test.ts", summary: "Test summary" },
+          understandingsBuffer: [
+            { filename: "src/test.ts", understanding: "Test understanding" },
           ],
           userFeedback: prepRes.userFeedback,
         });
@@ -999,20 +1003,20 @@ describe("ReduceHistoryNode", () => {
     describe("LLM integration", () => {
       test("should call LLM.reduceHistory with correct parameters", async () => {
         const prepRes = {
-          summariesBuffer: [
-            { filename: "file1.ts", summary: "Summary 1" },
-            { filename: "file2.ts", summary: "Summary 2" },
-            { filename: "file3.ts", summary: "Summary 3" },
-            { filename: "file4.ts", summary: "Summary 4" },
+          understandingsBuffer: [
+            { filename: "file1.ts", understanding: "Understanding 1" },
+            { filename: "file2.ts", understanding: "Understanding 2" },
+            { filename: "file3.ts", understanding: "Understanding 3" },
+            { filename: "file4.ts", understanding: "Understanding 4" },
           ],
           reducedOutput: "Existing reduced output",
           currentFile: {
             name: "src/current.ts",
-            analysis: { summary: "Current file summary" },
+            analysis: { understanding: "Current file understanding" },
           },
           userFeedback: {
             action: "refined" as const,
-            userSummary: "User refined summary",
+            userUnderstanding: "User refined understanding",
           },
           basic: {
             repoName: "test-repo",
@@ -1043,17 +1047,20 @@ describe("ReduceHistoryNode", () => {
                 path: "src/current.ts",
                 status: "done",
                 type: "file",
-                summary: "User refined summary",
+                understanding: "User refined understanding",
               },
             ],
           },
           reducedOutput: "Existing reduced output",
-          summariesBuffer: [
-            { filename: "file1.ts", summary: "Summary 1" },
-            { filename: "file2.ts", summary: "Summary 2" },
-            { filename: "file3.ts", summary: "Summary 3" },
-            { filename: "file4.ts", summary: "Summary 4" },
-            { filename: "src/current.ts", summary: "User refined summary" },
+          understandingsBuffer: [
+            { filename: "file1.ts", understanding: "Understanding 1" },
+            { filename: "file2.ts", understanding: "Understanding 2" },
+            { filename: "file3.ts", understanding: "Understanding 3" },
+            { filename: "file4.ts", understanding: "Understanding 4" },
+            {
+              filename: "src/current.ts",
+              understanding: "User refined understanding",
+            },
           ],
           userFeedback: prepRes.userFeedback,
         });
@@ -1061,16 +1068,16 @@ describe("ReduceHistoryNode", () => {
 
       test("should return LLM response and clear buffer", async () => {
         const prepRes = {
-          summariesBuffer: [
-            { filename: "file1.ts", summary: "Summary 1" },
-            { filename: "file2.ts", summary: "Summary 2" },
-            { filename: "file3.ts", summary: "Summary 3" },
-            { filename: "file4.ts", summary: "Summary 4" },
+          understandingsBuffer: [
+            { filename: "file1.ts", understanding: "Understanding 1" },
+            { filename: "file2.ts", understanding: "Understanding 2" },
+            { filename: "file3.ts", understanding: "Understanding 3" },
+            { filename: "file4.ts", understanding: "Understanding 4" },
           ],
           reducedOutput: "Previous output",
           currentFile: {
             name: "src/test.ts",
-            analysis: { summary: "Test summary" },
+            analysis: { understanding: "Test understanding" },
           },
           userFeedback: {
             action: "accept" as const,
@@ -1089,7 +1096,7 @@ describe("ReduceHistoryNode", () => {
 
         expect(result).toEqual({
           reducedOutput: "LLM generated reduced output",
-          summariesBuffer: [],
+          understandingsBuffer: [],
           updatedFiles: expect.any(Array),
         });
       });
@@ -1100,13 +1107,13 @@ describe("ReduceHistoryNode", () => {
     test("should update shared storage with exec results", async () => {
       const execRes = {
         reducedOutput: "New reduced output",
-        summariesBuffer: [],
+        understandingsBuffer: [],
         updatedFiles: [
           {
             path: "src/test.ts",
             status: "done" as const,
             type: "file" as const,
-            summary: "Test summary",
+            understanding: "Test understanding",
           },
         ],
       };
@@ -1114,7 +1121,7 @@ describe("ReduceHistoryNode", () => {
       const result = await node.post(sharedStorage, undefined, execRes);
 
       expect(sharedStorage.reducedOutput).toBe("New reduced output");
-      expect(sharedStorage.summariesBuffer).toEqual([]);
+      expect(sharedStorage.understandingsBuffer).toEqual([]);
       expect(sharedStorage.basic.files).toEqual(execRes.updatedFiles);
     });
 
@@ -1123,7 +1130,7 @@ describe("ReduceHistoryNode", () => {
 
       const execRes = {
         reducedOutput: "Final output",
-        summariesBuffer: [],
+        understandingsBuffer: [],
         updatedFiles: [],
       };
 
@@ -1137,7 +1144,7 @@ describe("ReduceHistoryNode", () => {
 
       const execRes = {
         reducedOutput: "Intermediate output",
-        summariesBuffer: [],
+        understandingsBuffer: [],
         updatedFiles: [],
       };
 

@@ -17,7 +17,7 @@ interface InteractionPanelProps {
     currentFile?: {
       name: string;
       analysis?: {
-        summary: string;
+        understanding: string;
       };
     };
     nextFile?: {
@@ -79,8 +79,8 @@ export function InteractionPanel({
     if (feedbackMode === "reject") {
       feedbackData.reason = response.trim();
     } else if (feedbackMode === "refine") {
-      feedbackData.userSummary = response.trim();
-      feedbackData.reason = "User provided refined summary";
+      feedbackData.userUnderstanding = response.trim();
+      feedbackData.reason = "User provided refined understanding";
     }
 
     onSendResponse(feedbackData);
@@ -240,7 +240,7 @@ export function InteractionPanel({
           <p className="text-sm text-blue-700">
             {feedbackMode === "reject"
               ? "Please explain why you reject this analysis:"
-              : "Please provide your refined summary:"}
+              : "Please provide your refined understanding:"}
           </p>
         </CardHeader>
         <CardContent>
@@ -260,7 +260,7 @@ export function InteractionPanel({
               <Label htmlFor="feedback">
                 {feedbackMode === "reject"
                   ? "Rejection Reason"
-                  : "Your Refined Summary"}
+                  : "Your Refined Understanding"}
               </Label>
               <Textarea
                 id="feedback"
@@ -269,7 +269,7 @@ export function InteractionPanel({
                 placeholder={
                   feedbackMode === "reject"
                     ? "Explain what's incorrect or missing in the analysis..."
-                    : "Provide your improved version of the file analysis..."
+                    : "Provide your improved version of the file understanding..."
                 }
                 disabled={disabled}
                 rows={6}

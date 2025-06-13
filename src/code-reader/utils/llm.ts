@@ -89,7 +89,7 @@ export class LLM {
   async reduceHistory(
     params: Pick<
       SharedStorage,
-      "basic" | "reducedOutput" | "summariesBuffer" | "userFeedback"
+      "basic" | "reducedOutput" | "understandingsBuffer" | "userFeedback"
     >
   ) {
     const prompt = reduceHistoryPrompt(params);

@@ -6,7 +6,7 @@ import { RepoSetupForm } from "@/components/RepoSetupForm";
 import { InteractionPanel } from "@/components/InteractionPanel";
 import { FlowsList } from "@/components/FlowsList";
 import { FileViewer } from "@/components/FileViewer";
-import { FileSummaryList } from "@/components/FileSummaryList";
+import { FileUnderstandingList } from "@/components/FileUnderstandingList";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
 import { RepoSetup, AnalysisData } from "@/types";
@@ -15,7 +15,7 @@ import { Markdown } from "@/components/Markdown";
 
 function App() {
   const [analysisData, setAnalysisData] = useState<AnalysisData>({
-    fileSummaries: [],
+    fileUnderstandings: [],
     reducedOutput: "",
   });
   const [currentView, setCurrentView] = useState<"list" | "analysis">("list");
@@ -42,17 +42,17 @@ function App() {
   // Update analysis data when flow status changes
   useEffect(() => {
     if (flowStatus) {
-      // Extract file summaries from basic.files array
-      const fileSummaries =
+      // Extract file understandings from basic.files array
+      const fileUnderstandings =
         flowStatus.basic?.files
-          ?.filter((file) => file.summary) // Only include files with summaries
+          ?.filter((file) => file.understanding) // Only include files with understandings
           .map((file) => ({
             filename: file.path,
-            summary: file.summary!,
+            understanding: file.understanding!,
           })) || [];
 
       setAnalysisData({
-        fileSummaries,
+        fileUnderstandings,
         reducedOutput: flowStatus.reducedOutput || "",
       });
     }
@@ -180,7 +180,7 @@ function App() {
               <TabsList>
                 <TabsTrigger value="current-file">Current File</TabsTrigger>
                 <TabsTrigger value="output">Output</TabsTrigger>
-                <TabsTrigger value="summaries">File Summaries</TabsTrigger>
+                <TabsTrigger value="summaries">File Understandings</TabsTrigger>
               </TabsList>
 
               <TabsContent
@@ -203,9 +203,7 @@ function App() {
                 <div className="p-6 bg-white rounded-lg border h-full overflow-auto">
                   {analysisData.reducedOutput ? (
                     <div>
-                      <h3 className="text-lg font-semibold mb-4">
-                        Analysis Summary
-                      </h3>
+                      <h3 className="text-lg font-semibold mb-4">Analysis</h3>
                       <Markdown>{analysisData.reducedOutput}</Markdown>
                     </div>
                   ) : (
@@ -220,7 +218,7 @@ function App() {
               </TabsContent>
 
               <TabsContent value="summaries" className="flex-1 overflow-hidden">
-                <FileSummaryList
+                <FileUnderstandingList
                   files={flowStatus?.basic?.files || []}
                   onFileSelect={handleFileSelect}
                 />

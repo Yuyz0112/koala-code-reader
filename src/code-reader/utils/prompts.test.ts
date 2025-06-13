@@ -44,7 +44,7 @@ describe("Prompts", () => {
               path: "src/auth.ts",
               status: "done",
               type: "file",
-              summary: "Auth logic",
+              understanding: "Auth logic",
             },
           ],
         },
@@ -84,7 +84,7 @@ describe("Prompts", () => {
           nextFile: { name: "next.ts", reason: "Next step" },
           currentFile: {
             name: "current.ts",
-            analysis: { summary: "Current analysis" },
+            analysis: { understanding: "Current analysis" },
           },
           userFeedback: { action: "accept" },
         },
@@ -105,7 +105,7 @@ describe("Prompts", () => {
           nextFile: { name: "next.ts", reason: "Next step" },
           currentFile: {
             name: "current.ts",
-            analysis: { summary: "Wrong analysis" },
+            analysis: { understanding: "Wrong analysis" },
           },
           userFeedback: { action: "reject", reason: "Missing key points" },
         },
@@ -126,11 +126,11 @@ describe("Prompts", () => {
           nextFile: { name: "next.ts", reason: "Next step" },
           currentFile: {
             name: "current.ts",
-            analysis: { summary: "Old analysis" },
+            analysis: { understanding: "Old analysis" },
           },
           userFeedback: {
             action: "refined",
-            userSummary: "Better analysis",
+            userUnderstanding: "Better analysis",
             reason: "More accurate",
           },
         },
@@ -151,7 +151,7 @@ describe("Prompts", () => {
                 path: "done.ts",
                 status: "done",
                 type: "file",
-                summary: "Completed",
+                understanding: "Completed",
               },
             ],
           },
@@ -193,7 +193,9 @@ describe("Prompts", () => {
           files: [],
         },
         reducedOutput: "",
-        summariesBuffer: [{ filename: "file1.ts", summary: "First file" }],
+        understandingsBuffer: [
+          { filename: "file1.ts", understanding: "First file" },
+        ],
         userFeedback: undefined,
       });
       expect(prompt).toMatchSnapshot();
@@ -208,7 +210,9 @@ describe("Prompts", () => {
           files: [],
         },
         reducedOutput: "Previous analysis content",
-        summariesBuffer: [{ filename: "file2.ts", summary: "Second file" }],
+        understandingsBuffer: [
+          { filename: "file2.ts", understanding: "Second file" },
+        ],
         userFeedback: undefined,
       });
       expect(prompt).toMatchSnapshot();
@@ -223,10 +227,12 @@ describe("Prompts", () => {
           files: [],
         },
         reducedOutput: "Previous content",
-        summariesBuffer: [{ filename: "file3.ts", summary: "Third file" }],
+        understandingsBuffer: [
+          { filename: "file3.ts", understanding: "Third file" },
+        ],
         userFeedback: {
           action: "refined",
-          userSummary: "Better",
+          userUnderstanding: "Better",
           reason: "More precise",
         },
       });
@@ -244,18 +250,20 @@ describe("Prompts", () => {
               path: "analyzed1.ts",
               status: "done",
               type: "file",
-              summary: "First done",
+              understanding: "First done",
             },
             {
               path: "analyzed2.ts",
               status: "done",
               type: "file",
-              summary: "Second done",
+              understanding: "Second done",
             },
           ],
         },
         reducedOutput: "Analysis so far",
-        summariesBuffer: [{ filename: "new.ts", summary: "New analysis" }],
+        understandingsBuffer: [
+          { filename: "new.ts", understanding: "New analysis" },
+        ],
         userFeedback: undefined,
       });
       expect(prompt).toMatchSnapshot();
@@ -276,7 +284,7 @@ describe("Prompts", () => {
           currentFile: { name: "current.ts" }, // no analysis property
           userFeedback: {
             action: "refined",
-            userSummary: "Better",
+            userUnderstanding: "Better",
             reason: "Fix",
           },
         },

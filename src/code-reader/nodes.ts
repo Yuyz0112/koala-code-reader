@@ -178,7 +178,7 @@ export class AnalyzeFileNode extends Node {
       };
     }
 
-    if (targetFile.status === "done" && targetFile.summary) {
+    if (targetFile.status === "done" && targetFile.understanding) {
       return {
         error: "File has already been analyzed, please select a different file",
       };
@@ -230,7 +230,7 @@ export class AnalyzeFileNode extends Node {
       currentFile: {
         name: result.current_analysis.filename,
         analysis: {
-          summary: result.current_analysis.understanding,
+          understanding: result.current_analysis.understanding,
         },
       },
       nextFile: {
@@ -288,7 +288,7 @@ export class AnalyzeFileNode extends Node {
   ): Promise<string | undefined> {
     if (!execRes) {
       shared.completed = true;
-      // all files analyzed, let reduce node check buffered summaries
+      // all files analyzed, let reduce node check buffered understandings
       return Actions.DO_REDUCE;
     }
 
@@ -345,7 +345,7 @@ export class ReduceHistoryNode extends Node {
   ): Promise<
     Pick<
       SharedStorage,
-      | "summariesBuffer"
+      | "understandingsBuffer"
       | "reducedOutput"
       | "currentFile"
       | "userFeedback"
@@ -354,7 +354,7 @@ export class ReduceHistoryNode extends Node {
     >
   > {
     return {
-      summariesBuffer: shared.summariesBuffer,
+      understandingsBuffer: shared.understandingsBuffer,
       reducedOutput: shared.reducedOutput,
       currentFile: shared.currentFile,
       userFeedback: shared.userFeedback,
@@ -366,7 +366,7 @@ export class ReduceHistoryNode extends Node {
   async exec(
     prepRes: Pick<
       SharedStorage,
-      | "summariesBuffer"
+      | "understandingsBuffer"
       | "reducedOutput"
       | "currentFile"
       | "userFeedback"
@@ -374,7 +374,7 @@ export class ReduceHistoryNode extends Node {
       | "completed"
     >
   ): Promise<
-    Pick<SharedStorage, "reducedOutput" | "summariesBuffer"> & {
+    Pick<SharedStorage, "reducedOutput" | "understandingsBuffer"> & {
       updatedFiles: FileItem[];
     }
   > {
@@ -382,17 +382,17 @@ export class ReduceHistoryNode extends Node {
       `[${this.runId}] ReduceHistoryNode.exec: Starting history reduction process`
     );
 
-    // Step 1: Determine current summary based on user feedback
-    let currentSummary = "";
+    // Step 1: Determine current understanding based on user feedback
+    let currentUnderstanding = "";
     if (prepRes.userFeedback?.action === "refined") {
-      currentSummary = prepRes.userFeedback.userSummary;
+      currentUnderstanding = prepRes.userFeedback.userUnderstanding;
       console.log(
-        `[${this.runId}] ReduceHistoryNode.exec: Using refined summary from user feedback`
+        `[${this.runId}] ReduceHistoryNode.exec: Using refined understanding from user feedback`
       );
     } else if (prepRes.userFeedback?.action === "accept") {
-      currentSummary = prepRes.currentFile?.analysis?.summary || "";
+      currentUnderstanding = prepRes.currentFile?.analysis?.understanding || "";
       console.log(
-        `[${this.runId}] ReduceHistoryNode.exec: Using accepted summary from analysis`
+        `[${this.runId}] ReduceHistoryNode.exec: Using accepted understanding from analysis`
       );
     } else {
       throw new Error(
@@ -400,56 +400,56 @@ export class ReduceHistoryNode extends Node {
       );
     }
 
-    // Step 2: Update files with summary and add to summariesBuffer
+    // Step 2: Update files with understanding and add to understandingsBuffer
     const updatedFiles = [...prepRes.basic.files];
     const currentFilePath = prepRes.currentFile?.name;
 
-    if (currentFilePath && currentSummary) {
+    if (currentFilePath && currentUnderstanding) {
       console.log(
         `[${this.runId}] ReduceHistoryNode.exec: Updating file status for ${currentFilePath}`
       );
 
-      // Find and update the file with summary and status
+      // Find and update the file with understanding and status
       const fileIndex = updatedFiles.findIndex(
         (f) => f.path === currentFilePath
       );
       if (fileIndex !== -1) {
         updatedFiles[fileIndex] = {
           ...updatedFiles[fileIndex],
-          summary: currentSummary,
+          understanding: currentUnderstanding,
           status: "done" as const,
         };
       }
 
-      prepRes.summariesBuffer.push({
+      prepRes.understandingsBuffer.push({
         filename: currentFilePath,
-        summary: currentSummary,
+        understanding: currentUnderstanding,
       });
 
       console.log(
-        `[${this.runId}] ReduceHistoryNode.exec: Added to summaries buffer, current buffer size: ${prepRes.summariesBuffer.length}`
+        `[${this.runId}] ReduceHistoryNode.exec: Added to understandings buffer, current buffer size: ${prepRes.understandingsBuffer.length}`
       );
     }
 
-    if (prepRes.summariesBuffer.length < 5 && !prepRes.completed) {
+    if (prepRes.understandingsBuffer.length < 5 && !prepRes.completed) {
       console.log(
-        `[${this.runId}] ReduceHistoryNode.exec: Buffer not full (${prepRes.summariesBuffer.length}/5) and analysis not completed, skipping LLM reduction`
+        `[${this.runId}] ReduceHistoryNode.exec: Buffer not full (${prepRes.understandingsBuffer.length}/5) and analysis not completed, skipping LLM reduction`
       );
       return {
         reducedOutput: prepRes.reducedOutput,
-        summariesBuffer: prepRes.summariesBuffer,
+        understandingsBuffer: prepRes.understandingsBuffer,
         updatedFiles,
       };
     }
 
     // Step 3: Use LLM to reduce history with new information
     console.log(
-      `[${this.runId}] ReduceHistoryNode.exec: Starting LLM history reduction with ${prepRes.summariesBuffer.length} summaries`
+      `[${this.runId}] ReduceHistoryNode.exec: Starting LLM history reduction with ${prepRes.understandingsBuffer.length} understandings`
     );
     const { reduced_output } = await this.llm.reduceHistory({
       basic: { ...prepRes.basic, files: updatedFiles },
       reducedOutput: prepRes.reducedOutput,
-      summariesBuffer: prepRes.summariesBuffer,
+      understandingsBuffer: prepRes.understandingsBuffer,
       userFeedback: prepRes.userFeedback,
     });
     console.log(
@@ -458,7 +458,7 @@ export class ReduceHistoryNode extends Node {
 
     return {
       reducedOutput: reduced_output,
-      summariesBuffer: [],
+      understandingsBuffer: [],
       updatedFiles,
     };
   }
@@ -466,12 +466,12 @@ export class ReduceHistoryNode extends Node {
   async post(
     shared: SharedStorage,
     _: unknown,
-    execRes: Pick<SharedStorage, "reducedOutput" | "summariesBuffer"> & {
+    execRes: Pick<SharedStorage, "reducedOutput" | "understandingsBuffer"> & {
       updatedFiles: FileItem[];
     }
   ): Promise<string | undefined> {
     shared.reducedOutput = execRes.reducedOutput;
-    shared.summariesBuffer = execRes.summariesBuffer;
+    shared.understandingsBuffer = execRes.understandingsBuffer;
     shared.basic.files = execRes.updatedFiles;
 
     if (shared.completed) {

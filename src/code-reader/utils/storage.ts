@@ -4,7 +4,7 @@ export type FileItem = {
   path: string;
   status: FileStatus;
   type: "file" | "directory";
-  summary?: string; // Analysis understanding for analyzed files
+  understanding?: string; // Analysis understanding for analyzed files
 };
 
 export type SharedStorage = {
@@ -22,7 +22,7 @@ export type SharedStorage = {
   currentFile?: {
     name: string;
     analysis?: {
-      summary: string;
+      understanding: string;
     };
   };
 
@@ -42,13 +42,13 @@ export type SharedStorage = {
       }
     | {
         action: "refined";
-        userSummary: string;
+        userUnderstanding: string;
         reason?: string;
       };
 
-  summariesBuffer: Array<{
+  understandingsBuffer: Array<{
     filename: string;
-    summary: string;
+    understanding: string;
   }>;
 
   reducedOutput: string;
@@ -167,15 +167,15 @@ export function generateFileStructureWithStatus(files: FileItem[]): string {
   return result.join("\n");
 }
 
-// Helper function to extract analyzed summaries from files
-export function getAnalyzedSummaries(files: FileItem[]): Array<{
+// Helper function to extract analyzed understandings from files
+export function getAnalyzedUnderstandings(files: FileItem[]): Array<{
   filename: string;
-  summary: string;
+  understanding: string;
 }> {
   return files
-    .filter((file) => file.status === "done" && file.summary)
+    .filter((file) => file.status === "done" && file.understanding)
     .map((file) => ({
       filename: file.path,
-      summary: file.summary!,
+      understanding: file.understanding!,
     }));
 }
