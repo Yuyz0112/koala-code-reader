@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { RequestType } from "@/types";
 import { CheckCircle, XCircle, Edit3 } from "lucide-react";
 import { Markdown } from "@/components/Markdown";
@@ -99,8 +100,8 @@ export function InteractionPanel({
     // Check if flow is completed
     if (flowStatus?.completed) {
       return (
-        <Card className="border-green-200 bg-green-50 h-full">
-          <CardHeader>
+        <Card className="border-green-200 bg-green-50 h-full flex flex-col">
+          <CardHeader className="flex-shrink-0">
             <CardTitle className="text-green-800 flex items-center gap-2">
               AI Assistant Status
             </CardTitle>
@@ -108,24 +109,26 @@ export function InteractionPanel({
               Your repository analysis has been completed successfully
             </p>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4 text-sm text-green-700">
-              <div className="p-3 bg-white rounded-md border border-green-200">
-                <ul className="space-y-1 text-green-600">
-                  <li>• All repository files have been analyzed</li>
-                  <li>• Summaries and insights have been generated</li>
-                  <li>• Results are ready for review</li>
-                </ul>
+          <CardContent className="flex-1 min-h-0">
+            <ScrollArea className="h-full">
+              <div className="space-y-4 text-sm text-green-700 pr-6">
+                <div className="p-3 bg-white rounded-md border border-green-200">
+                  <ul className="space-y-1 text-green-600">
+                    <li>• All repository files have been analyzed</li>
+                    <li>• Summaries and insights have been generated</li>
+                    <li>• Results are ready for review</li>
+                  </ul>
+                </div>
               </div>
-            </div>
+            </ScrollArea>
           </CardContent>
         </Card>
       );
     }
 
     return (
-      <Card className="border-blue-200 bg-blue-50 h-full">
-        <CardHeader>
+      <Card className="border-blue-200 bg-blue-50 h-full flex flex-col">
+        <CardHeader className="flex-shrink-0">
           <CardTitle className="text-blue-800 flex items-center gap-2">
             <div className="w-5 h-5 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin"></div>
             AI Assistant Status
@@ -145,53 +148,55 @@ export function InteractionPanel({
             </span>
           </p>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4 text-sm text-gray-700">
-            <div className="p-3 bg-white rounded-md border border-blue-200">
-              <p className="font-medium text-gray-800 mb-2">
-                What's happening now:
-              </p>
-              <ul className="space-y-2 text-gray-600">
-                <li>• AI is analyzing your repository files</li>
-                <li>• Processing code structure and patterns</li>
-                <li>• Generating summaries and insights</li>
-              </ul>
-            </div>
-
-            <div className="p-3 bg-blue-50 rounded-md border border-blue-200">
-              <p className="font-medium text-blue-800 mb-2">
-                💡 What you can do:
-              </p>
-              <ul className="space-y-2 text-blue-700">
-                <li>• Monitor progress in the Analysis Progress panel</li>
-                <li>
-                  • View current file being analyzed in the Current File tab
-                </li>
-                <li>• Check completed summaries in the File Summaries tab</li>
-                <li>• Wait for AI to request your feedback when needed</li>
-              </ul>
-            </div>
-
-            <div className="text-center py-4">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-gray-200">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
-                  <div
-                    className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
-                    style={{ animationDelay: "0.1s" }}
-                  ></div>
-                  <div
-                    className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
-                    style={{ animationDelay: "0.2s" }}
-                  ></div>
-                </div>
-                <p className="text-xs text-gray-500">
-                  This panel will show interaction options when the AI needs
-                  your input
+        <CardContent className="flex-1 min-h-0">
+          <ScrollArea className="h-full">
+            <div className="space-y-4 text-sm text-gray-700 pr-6">
+              <div className="p-3 bg-white rounded-md border border-blue-200">
+                <p className="font-medium text-gray-800 mb-2">
+                  What's happening now:
                 </p>
+                <ul className="space-y-2 text-gray-600">
+                  <li>• AI is analyzing your repository files</li>
+                  <li>• Processing code structure and patterns</li>
+                  <li>• Generating summaries and insights</li>
+                </ul>
+              </div>
+
+              <div className="p-3 bg-blue-50 rounded-md border border-blue-200">
+                <p className="font-medium text-blue-800 mb-2">
+                  💡 What you can do:
+                </p>
+                <ul className="space-y-2 text-blue-700">
+                  <li>• Monitor progress in the Analysis Progress panel</li>
+                  <li>
+                    • View current file being analyzed in the Current File tab
+                  </li>
+                  <li>• Check completed summaries in the File Summaries tab</li>
+                  <li>• Wait for AI to request your feedback when needed</li>
+                </ul>
+              </div>
+
+              <div className="text-center py-4">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-gray-200">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
+                    <div
+                      className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "0.1s" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
+                      style={{ animationDelay: "0.2s" }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    This panel will show interaction options when the AI needs
+                    your input
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          </ScrollArea>
         </CardContent>
       </Card>
     );
@@ -230,8 +235,8 @@ export function InteractionPanel({
   // Render feedback mode form for reject/refine actions
   if (feedbackMode) {
     return (
-      <Card className="border-blue-200 bg-blue-50 h-full">
-        <CardHeader>
+      <Card className="border-blue-200 bg-blue-50 h-full flex flex-col">
+        <CardHeader className="flex-shrink-0">
           <CardTitle className="text-blue-800">
             {feedbackMode === "reject"
               ? "🚫 Reject Analysis"
@@ -243,221 +248,229 @@ export function InteractionPanel({
               : "Please provide your refined understanding:"}
           </p>
         </CardHeader>
-        <CardContent>
-          {requestData?.message && (
-            <div className="mb-4 p-3 bg-white rounded-md border">
-              <p className="text-sm font-medium text-gray-700">
-                Current AI Analysis:
-              </p>
-              <Markdown className="text-sm text-gray-600 mt-1">
-                {requestData.message}
-              </Markdown>
-            </div>
-          )}
-
-          <form onSubmit={handleFeedbackSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="feedback">
-                {feedbackMode === "reject"
-                  ? "Rejection Reason"
-                  : "Your Refined Understanding"}
-              </Label>
-              <Textarea
-                id="feedback"
-                value={response}
-                onChange={(e) => setResponse(e.target.value)}
-                placeholder={
-                  feedbackMode === "reject"
-                    ? "Explain what's incorrect or missing in the analysis..."
-                    : "Provide your improved version of the file understanding..."
-                }
-                disabled={disabled}
-                rows={6}
-                required
-              />
-              {feedbackMode === "refine" && requestData?.message && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setResponse(requestData.message)}
-                  disabled={disabled}
-                  className="mt-2"
-                >
-                  Copy AI Analysis as Starting Point
-                </Button>
+        <CardContent className="flex-1 min-h-0">
+          <ScrollArea className="h-full">
+            <div className="space-y-4 pr-6">
+              {requestData?.message && (
+                <div className="mb-4 p-3 bg-white rounded-md border">
+                  <p className="text-sm font-medium text-gray-700">
+                    Current AI Analysis:
+                  </p>
+                  <Markdown className="text-sm text-gray-600 mt-1">
+                    {requestData.message}
+                  </Markdown>
+                </div>
               )}
-            </div>
 
-            <div className="flex gap-2">
-              <Button type="submit" disabled={disabled || !response.trim()}>
-                Submit {feedbackMode === "reject" ? "Rejection" : "Refinement"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setFeedbackMode(null);
-                  setResponse("");
-                }}
-                disabled={disabled}
-              >
-                Cancel
-              </Button>
+              <form onSubmit={handleFeedbackSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="feedback">
+                    {feedbackMode === "reject"
+                      ? "Rejection Reason"
+                      : "Your Refined Understanding"}
+                  </Label>
+                  <Textarea
+                    id="feedback"
+                    value={response}
+                    onChange={(e) => setResponse(e.target.value)}
+                    placeholder={
+                      feedbackMode === "reject"
+                        ? "Explain what's incorrect or missing in the analysis..."
+                        : "Provide your improved version of the file understanding..."
+                    }
+                    disabled={disabled}
+                    rows={6}
+                    required
+                  />
+                  {feedbackMode === "refine" && requestData?.message && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setResponse(requestData.message)}
+                      disabled={disabled}
+                      className="mt-2"
+                    >
+                      Copy AI Analysis as Starting Point
+                    </Button>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={disabled || !response.trim()}>
+                    Submit {feedbackMode === "reject" ? "Rejection" : "Refinement"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setFeedbackMode(null);
+                      setResponse("");
+                    }}
+                    disabled={disabled}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
             </div>
-          </form>
+          </ScrollArea>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="border-orange-200 bg-orange-50 h-full">
-      <CardHeader>
+    <Card className="border-orange-200 bg-orange-50 h-full flex flex-col">
+      <CardHeader className="flex-shrink-0">
         <CardTitle className="text-orange-800">{getTitle()}</CardTitle>
         <p className="text-sm text-orange-700">{getDescription()}</p>
       </CardHeader>
-      <CardContent>
-        {requestData?.currentFile && (
-          <div className="mb-4 p-3 bg-blue-50 rounded-md border border-blue-200">
-            <p className="text-sm font-medium text-blue-700">
-              Current File: {requestData.currentFile}
-            </p>
+      <CardContent className="flex-1 min-h-0">
+        <ScrollArea className="h-full">
+          <div className="space-y-4 pr-6">
+            {requestData?.currentFile && (
+              <div className="mb-4 p-3 bg-blue-50 rounded-md border border-blue-200">
+                <p className="text-sm font-medium text-blue-700">
+                  Current File: {requestData.currentFile}
+                </p>
+              </div>
+            )}
+
+            {requestData?.message && (
+              <div className="mb-4 p-3 bg-white rounded-md border">
+                <p className="text-sm font-medium text-gray-700">
+                  {requestType === "user_feedback" ? "AI Analysis:" : "AI Message:"}
+                </p>
+                <Markdown className="text-sm text-gray-600 mt-1">
+                  {requestData.message}
+                </Markdown>
+              </div>
+            )}
+
+            {requestData?.nextFile && (
+              <div className="mb-4 p-3 bg-purple-50 rounded-md border border-purple-200">
+                <p className="text-sm font-medium text-purple-700">
+                  Next File: {requestData.nextFile.name}
+                </p>
+                <p className="text-xs text-purple-500 mt-1">
+                  {requestData.nextFile.reason}
+                </p>
+              </div>
+            )}
+
+            {requestData?.suggestion && (
+              <div className="mb-4 p-3 bg-blue-50 rounded-md border border-blue-200">
+                <p className="text-sm font-medium text-blue-700">Suggestion:</p>
+                <p className="text-sm text-blue-600 mt-1">
+                  {requestData.suggestion}
+                </p>
+              </div>
+            )}
+
+            {requestData?.results && (
+              <div className="mb-4 p-3 bg-green-50 rounded-md border border-green-200">
+                <p className="text-sm font-medium text-green-700">
+                  Analysis Results:
+                </p>
+                <pre className="text-xs text-green-600 mt-1 whitespace-pre-wrap">
+                  {JSON.stringify(requestData.results, null, 2)}
+                </pre>
+              </div>
+            )}
+
+            {/* User Feedback Mode - Three Action Buttons */}
+            {requestType === "user_feedback" && (
+              <div className="space-y-4">
+                <div className="text-sm text-gray-700 mb-3">
+                  Choose your feedback action:
+                </div>
+
+                <div className="grid grid-cols-1 gap-3">
+                  <Button
+                    onClick={() => handleFeedbackAction("accept")}
+                    disabled={disabled}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Approve
+                    <span className="text-xs ml-2 opacity-80">
+                      (Analysis is correct)
+                    </span>
+                  </Button>
+
+                  <Button
+                    onClick={() => handleFeedbackAction("refine")}
+                    disabled={disabled}
+                    variant="outline"
+                    className="w-full border-blue-500 text-blue-700 hover:bg-blue-50"
+                  >
+                    <Edit3 className="h-4 w-4 mr-2" />
+                    Refine
+                    <span className="text-xs ml-2 opacity-80">
+                      (Provide improved version)
+                    </span>
+                  </Button>
+
+                  <Button
+                    onClick={() => handleFeedbackAction("reject")}
+                    disabled={disabled}
+                    variant="outline"
+                    className="w-full border-red-500 text-red-700 hover:bg-red-50"
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Reject
+                    <span className="text-xs ml-2 opacity-80">
+                      (Analysis is incorrect)
+                    </span>
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Generic Response Form for other request types */}
+            {requestType !== "user_feedback" && (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="response">Your Response</Label>
+                  <Textarea
+                    id="response"
+                    value={response}
+                    onChange={(e) => setResponse(e.target.value)}
+                    placeholder={
+                      requestType === "analysis_complete" ||
+                      requestType === "finish"
+                        ? "Any additional feedback or questions? (optional)"
+                        : "Please provide your response..."
+                    }
+                    disabled={disabled}
+                    rows={4}
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  <Button type="submit" disabled={disabled}>
+                    Send Response
+                  </Button>
+
+                  {(requestType === "analysis_complete" ||
+                    requestType === "finish") && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleContinue}
+                      disabled={disabled}
+                    >
+                      {requestType === "finish"
+                        ? "Acknowledge"
+                        : "Continue Analysis"}
+                    </Button>
+                  )}
+                </div>
+              </form>
+            )}
           </div>
-        )}
-
-        {requestData?.message && (
-          <div className="mb-4 p-3 bg-white rounded-md border">
-            <p className="text-sm font-medium text-gray-700">
-              {requestType === "user_feedback" ? "AI Analysis:" : "AI Message:"}
-            </p>
-            <Markdown className="text-sm text-gray-600 mt-1">
-              {requestData.message}
-            </Markdown>
-          </div>
-        )}
-
-        {requestData?.nextFile && (
-          <div className="mb-4 p-3 bg-purple-50 rounded-md border border-purple-200">
-            <p className="text-sm font-medium text-purple-700">
-              Next File: {requestData.nextFile.name}
-            </p>
-            <p className="text-xs text-purple-500 mt-1">
-              {requestData.nextFile.reason}
-            </p>
-          </div>
-        )}
-
-        {requestData?.suggestion && (
-          <div className="mb-4 p-3 bg-blue-50 rounded-md border border-blue-200">
-            <p className="text-sm font-medium text-blue-700">Suggestion:</p>
-            <p className="text-sm text-blue-600 mt-1">
-              {requestData.suggestion}
-            </p>
-          </div>
-        )}
-
-        {requestData?.results && (
-          <div className="mb-4 p-3 bg-green-50 rounded-md border border-green-200">
-            <p className="text-sm font-medium text-green-700">
-              Analysis Results:
-            </p>
-            <pre className="text-xs text-green-600 mt-1 whitespace-pre-wrap">
-              {JSON.stringify(requestData.results, null, 2)}
-            </pre>
-          </div>
-        )}
-
-        {/* User Feedback Mode - Three Action Buttons */}
-        {requestType === "user_feedback" && (
-          <div className="space-y-4">
-            <div className="text-sm text-gray-700 mb-3">
-              Choose your feedback action:
-            </div>
-
-            <div className="grid grid-cols-1 gap-3">
-              <Button
-                onClick={() => handleFeedbackAction("accept")}
-                disabled={disabled}
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Approve
-                <span className="text-xs ml-2 opacity-80">
-                  (Analysis is correct)
-                </span>
-              </Button>
-
-              <Button
-                onClick={() => handleFeedbackAction("refine")}
-                disabled={disabled}
-                variant="outline"
-                className="w-full border-blue-500 text-blue-700 hover:bg-blue-50"
-              >
-                <Edit3 className="h-4 w-4 mr-2" />
-                Refine
-                <span className="text-xs ml-2 opacity-80">
-                  (Provide improved version)
-                </span>
-              </Button>
-
-              <Button
-                onClick={() => handleFeedbackAction("reject")}
-                disabled={disabled}
-                variant="outline"
-                className="w-full border-red-500 text-red-700 hover:bg-red-50"
-              >
-                <XCircle className="h-4 w-4 mr-2" />
-                Reject
-                <span className="text-xs ml-2 opacity-80">
-                  (Analysis is incorrect)
-                </span>
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Generic Response Form for other request types */}
-        {requestType !== "user_feedback" && (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="response">Your Response</Label>
-              <Textarea
-                id="response"
-                value={response}
-                onChange={(e) => setResponse(e.target.value)}
-                placeholder={
-                  requestType === "analysis_complete" ||
-                  requestType === "finish"
-                    ? "Any additional feedback or questions? (optional)"
-                    : "Please provide your response..."
-                }
-                disabled={disabled}
-                rows={4}
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <Button type="submit" disabled={disabled}>
-                Send Response
-              </Button>
-
-              {(requestType === "analysis_complete" ||
-                requestType === "finish") && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleContinue}
-                  disabled={disabled}
-                >
-                  {requestType === "finish"
-                    ? "Acknowledge"
-                    : "Continue Analysis"}
-                </Button>
-              )}
-            </div>
-          </form>
-        )}
+        </ScrollArea>
       </CardContent>
     </Card>
   );
