@@ -331,7 +331,7 @@ describe("AnalyzeFileNode", () => {
     test("should return null when LLM returns analysis_complete", async () => {
       const mockAnalysisCompleteResponse = {
         analysis_complete: true as const,
-        final_summary: "Analysis completed successfully",
+        final_understanding: "Analysis completed successfully",
       };
       vi.mocked(mockLLM.analyzeFile).mockResolvedValue(
         mockAnalysisCompleteResponse
@@ -357,7 +357,7 @@ describe("AnalyzeFileNode", () => {
       const mockAnalysisResponse = {
         current_analysis: {
           filename: "src/index.ts",
-          summary: "Main entry point of the application",
+          understanding: "Main entry point of the application",
         },
         next_focus_proposal: {
           next_filename: "src/utils.ts",
@@ -410,7 +410,7 @@ describe("AnalyzeFileNode", () => {
       const mockAnalysisResponse = {
         current_analysis: {
           filename: "src/index.ts",
-          summary: "Main entry point",
+          understanding: "Main entry point",
         },
         next_focus_proposal: {
           next_filename: "src/utils.ts",

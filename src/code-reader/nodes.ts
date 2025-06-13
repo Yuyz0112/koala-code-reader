@@ -230,7 +230,7 @@ export class AnalyzeFileNode extends Node {
       currentFile: {
         name: result.current_analysis.filename,
         analysis: {
-          summary: result.current_analysis.summary,
+          summary: result.current_analysis.understanding,
         },
       },
       nextFile: {

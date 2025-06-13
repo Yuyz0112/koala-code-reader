@@ -72,7 +72,7 @@ export class LLM {
       | {
           current_analysis: {
             filename: string;
-            summary: string;
+            understanding: string;
           };
           next_focus_proposal: {
             next_filename: string;
@@ -81,7 +81,7 @@ export class LLM {
         }
       | {
           analysis_complete: true;
-          final_summary: string;
+          final_understanding: string;
         }
     >(text);
   }

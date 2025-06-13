@@ -57,10 +57,6 @@ ask_user: "Specific question about what additional information you need"  # stri
 \`\`\`
 </OutputFormat>
 
-<OutputLanguge>
-使用中文回复
-</OutputLanguge>
-
 Analyze the codebase structure and provide your decision:`;
 
 export const analyzeFilePrompt = (
@@ -85,7 +81,7 @@ Reason for analyzing this file: ${nextFile.reason}`
       : "**CONTINUE ANALYSIS** based on current context";
 
     instructions = `1. **Analyze the file content** thoroughly to understand its purpose, key functionality, and role
-2. **Provide a concise summary** of what this file does and why it's important
+2. **Provide your analysis and understanding** of what this file does and why it's important
 3. **Propose the next logical file** to analyze based on your understanding`;
   } else if (userFeedback.action === "accept") {
     // User accepted previous analysis, continue to next file
@@ -109,15 +105,15 @@ User's rejection reason: ${userFeedback.reason}`;
 3. **Provide a corrected analysis** that better reflects the file's actual purpose and functionality
 4. **Propose the next logical file** based on the corrected understanding`;
   } else if (userFeedback.action === "refined") {
-    // User provided refined summary, incorporate it and continue
+    // User provided refined understanding, incorporate it and continue
     analysisScenario = `**INCORPORATE REFINEMENT AND CONTINUE**: ${
       nextFile?.name || "Next file"
     }
-User provided refined summary for ${currentFile?.name || "previous file"}:
-- Original AI Summary: ${
-      currentFile?.analysis?.summary || "No previous summary"
+User provided refined understanding for ${currentFile?.name || "previous file"}:
+- Original AI Analysis: ${
+      currentFile?.analysis?.summary || "No previous analysis"
     }
-- User's Refined Summary: ${userFeedback.userSummary}
+- User's Refined Understanding: ${userFeedback.userSummary}
 - User's Reason: ${userFeedback.reason || "No specific reason provided"}`;
 
     instructions = `1. **Acknowledge and incorporate** the user's refined understanding from the previous file
@@ -200,7 +196,7 @@ Focus on understanding the codebase incrementally, but only when there's clear j
 \`\`\`yaml
 current_analysis:
   filename: "current/file/path.ext"        # string - file being analyzed
-  summary: "Concise analysis summary"      # string - purpose, functionality, notable points
+  understanding: "Analysis and insights based on main goal"      # string - purpose, functionality, notable points
 next_focus_proposal:
   next_filename: "next/file/path.ext"      # string - exactly ONE file to analyze next
   reason: "Why this is the logical next step"  # string - reasoning for next file choice
@@ -209,13 +205,9 @@ next_focus_proposal:
 **If analysis is complete:**
 \`\`\`yaml
 analysis_complete: true
-final_summary: "Overall understanding summary"  # string - synthesis of all analyzed files
+final_understanding: "Overall comprehensive understanding"  # string - synthesis of all analyzed files
 \`\`\`
 </OutputFormat>
-
-<OutputLanguge>
-使用中文回复
-</OutputLanguge>
 
 Analyze the file and provide your assessment:`;
 };
@@ -254,11 +246,15 @@ ${reducedOutput}`
 
 <NewInformation>
 ${summariesBuffer
-  .map((b) => `File: ${b.filename}\nSummary: ${b.summary}`)
+  .map((b) => `File: ${b.filename}\nAnalysis: ${b.summary}`)
   .join("\n\n")}
 
 User Feedback: ${userFeedback?.action || "No feedback"}
-${userFeedback?.action === "refined" ? `(User provided refined summary)` : ""}
+${
+  userFeedback?.action === "refined"
+    ? `(User provided refined understanding)`
+    : ""
+}
 ${userFeedback?.action === "accept" ? `(User accepted the analysis)` : ""}
 </NewInformation>
 
@@ -299,10 +295,6 @@ reduced_output: |
   # This should be a FULL document, not an incremental update
 \`\`\`
 </OutputFormat>
-
-<OutputLanguge>
-使用中文回复
-</OutputLanguge>
 
 Integrate the new analysis and provide the updated reduced output:`;
 };

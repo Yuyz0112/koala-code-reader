@@ -4,7 +4,7 @@ export type FileItem = {
   path: string;
   status: FileStatus;
   type: "file" | "directory";
-  summary?: string; // Analysis summary for analyzed files
+  summary?: string; // Analysis understanding for analyzed files
 };
 
 export type SharedStorage = {

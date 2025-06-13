@@ -1,0 +1,300 @@
+import { describe, it, expect } from "vitest";
+import {
+  getEntryFilePrompt,
+  analyzeFilePrompt,
+  reduceHistoryPrompt,
+} from "./prompts";
+import type { SharedStorage } from "./storage";
+
+describe("Prompts", () => {
+  describe("getEntryFilePrompt", () => {
+    it("should generate basic entry file prompt", () => {
+      const prompt = getEntryFilePrompt({
+        basic: {
+          repoName: "test-repo",
+          mainGoal: "Understand auth",
+          specificAreas: undefined,
+          files: [],
+        },
+      });
+      expect(prompt).toMatchSnapshot();
+    });
+
+    it("should include specific areas when provided", () => {
+      const prompt = getEntryFilePrompt({
+        basic: {
+          repoName: "test-repo",
+          mainGoal: "Understand auth",
+          specificAreas: "JWT handling",
+          files: [],
+        },
+      });
+      expect(prompt).toMatchSnapshot();
+    });
+
+    it("should include file structure", () => {
+      const prompt = getEntryFilePrompt({
+        basic: {
+          repoName: "test-repo",
+          mainGoal: "Understand auth",
+          specificAreas: undefined,
+          files: [
+            { path: "src/index.ts", status: "pending", type: "file" },
+            {
+              path: "src/auth.ts",
+              status: "done",
+              type: "file",
+              summary: "Auth logic",
+            },
+          ],
+        },
+      });
+      expect(prompt).toMatchSnapshot();
+    });
+  });
+
+  describe("analyzeFilePrompt", () => {
+    it("should generate prompt without user feedback", () => {
+      const prompt = analyzeFilePrompt(
+        {
+          basic: {
+            repoName: "test",
+            mainGoal: "Learn",
+            specificAreas: undefined,
+            files: [],
+          },
+          nextFile: { name: "index.ts", reason: "Entry point" },
+          currentFile: undefined,
+          userFeedback: undefined,
+        },
+        "const x = 1;"
+      );
+      expect(prompt).toMatchSnapshot();
+    });
+
+    it("should handle accept feedback", () => {
+      const prompt = analyzeFilePrompt(
+        {
+          basic: {
+            repoName: "test",
+            mainGoal: "Learn",
+            specificAreas: undefined,
+            files: [],
+          },
+          nextFile: { name: "next.ts", reason: "Next step" },
+          currentFile: {
+            name: "current.ts",
+            analysis: { summary: "Current analysis" },
+          },
+          userFeedback: { action: "accept" },
+        },
+        "const y = 2;"
+      );
+      expect(prompt).toMatchSnapshot();
+    });
+
+    it("should handle reject feedback", () => {
+      const prompt = analyzeFilePrompt(
+        {
+          basic: {
+            repoName: "test",
+            mainGoal: "Learn",
+            specificAreas: undefined,
+            files: [],
+          },
+          nextFile: { name: "next.ts", reason: "Next step" },
+          currentFile: {
+            name: "current.ts",
+            analysis: { summary: "Wrong analysis" },
+          },
+          userFeedback: { action: "reject", reason: "Missing key points" },
+        },
+        "const z = 3;"
+      );
+      expect(prompt).toMatchSnapshot();
+    });
+
+    it("should handle refined feedback", () => {
+      const prompt = analyzeFilePrompt(
+        {
+          basic: {
+            repoName: "test",
+            mainGoal: "Learn",
+            specificAreas: undefined,
+            files: [],
+          },
+          nextFile: { name: "next.ts", reason: "Next step" },
+          currentFile: {
+            name: "current.ts",
+            analysis: { summary: "Old analysis" },
+          },
+          userFeedback: {
+            action: "refined",
+            userSummary: "Better analysis",
+            reason: "More accurate",
+          },
+        },
+        "const a = 4;"
+      );
+      expect(prompt).toMatchSnapshot();
+    });
+
+    it("should include analysis history", () => {
+      const prompt = analyzeFilePrompt(
+        {
+          basic: {
+            repoName: "test",
+            mainGoal: "Learn",
+            specificAreas: undefined,
+            files: [
+              {
+                path: "done.ts",
+                status: "done",
+                type: "file",
+                summary: "Completed",
+              },
+            ],
+          },
+          nextFile: { name: "next.ts", reason: "Next step" },
+          currentFile: undefined,
+          userFeedback: undefined,
+        },
+        "const b = 5;"
+      );
+      expect(prompt).toMatchSnapshot();
+    });
+
+    it("should handle empty file content", () => {
+      const prompt = analyzeFilePrompt(
+        {
+          basic: {
+            repoName: "test",
+            mainGoal: "Learn",
+            specificAreas: undefined,
+            files: [],
+          },
+          nextFile: { name: "empty.ts", reason: "Check empty" },
+          currentFile: undefined,
+          userFeedback: undefined,
+        },
+        ""
+      );
+      expect(prompt).toMatchSnapshot();
+    });
+  });
+
+  describe("reduceHistoryPrompt", () => {
+    it("should generate first reduction prompt", () => {
+      const prompt = reduceHistoryPrompt({
+        basic: {
+          repoName: "test",
+          mainGoal: "Learn",
+          specificAreas: undefined,
+          files: [],
+        },
+        reducedOutput: "",
+        summariesBuffer: [{ filename: "file1.ts", summary: "First file" }],
+        userFeedback: undefined,
+      });
+      expect(prompt).toMatchSnapshot();
+    });
+
+    it("should handle existing reduced output", () => {
+      const prompt = reduceHistoryPrompt({
+        basic: {
+          repoName: "test",
+          mainGoal: "Learn",
+          specificAreas: undefined,
+          files: [],
+        },
+        reducedOutput: "Previous analysis content",
+        summariesBuffer: [{ filename: "file2.ts", summary: "Second file" }],
+        userFeedback: undefined,
+      });
+      expect(prompt).toMatchSnapshot();
+    });
+
+    it("should include user feedback", () => {
+      const prompt = reduceHistoryPrompt({
+        basic: {
+          repoName: "test",
+          mainGoal: "Learn",
+          specificAreas: undefined,
+          files: [],
+        },
+        reducedOutput: "Previous content",
+        summariesBuffer: [{ filename: "file3.ts", summary: "Third file" }],
+        userFeedback: {
+          action: "refined",
+          userSummary: "Better",
+          reason: "More precise",
+        },
+      });
+      expect(prompt).toMatchSnapshot();
+    });
+
+    it("should show all analyzed files", () => {
+      const prompt = reduceHistoryPrompt({
+        basic: {
+          repoName: "test",
+          mainGoal: "Learn",
+          specificAreas: undefined,
+          files: [
+            {
+              path: "analyzed1.ts",
+              status: "done",
+              type: "file",
+              summary: "First done",
+            },
+            {
+              path: "analyzed2.ts",
+              status: "done",
+              type: "file",
+              summary: "Second done",
+            },
+          ],
+        },
+        reducedOutput: "Analysis so far",
+        summariesBuffer: [{ filename: "new.ts", summary: "New analysis" }],
+        userFeedback: undefined,
+      });
+      expect(prompt).toMatchSnapshot();
+    });
+  });
+
+  describe("Edge cases", () => {
+    it("should handle missing current file analysis", () => {
+      const prompt = analyzeFilePrompt(
+        {
+          basic: {
+            repoName: "test",
+            mainGoal: "Learn",
+            specificAreas: undefined,
+            files: [],
+          },
+          nextFile: { name: "next.ts", reason: "Next" },
+          currentFile: { name: "current.ts" }, // no analysis property
+          userFeedback: {
+            action: "refined",
+            userSummary: "Better",
+            reason: "Fix",
+          },
+        },
+        "const code = true;"
+      );
+      expect(prompt).toMatchSnapshot();
+    });
+
+    it("should handle empty repo name", () => {
+      const prompt = getEntryFilePrompt({
+        basic: {
+          repoName: "",
+          mainGoal: "Learn",
+          specificAreas: undefined,
+          files: [],
+        },
+      });
+      expect(prompt).toMatchSnapshot();
+    });
+  });
+});
