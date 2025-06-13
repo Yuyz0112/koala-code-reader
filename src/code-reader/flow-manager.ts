@@ -142,9 +142,11 @@ export class FlowManager {
       return;
     }
 
+    let flow: PersistedFlow<SharedStorage> | null = null;
+
     try {
       console.log(`[FlowManager] Attempting to get or attach flow ${runId}`);
-      const flow = await this.getOrAttachFlow(kv, models, runId);
+      flow = await this.getOrAttachFlow(kv, models, runId);
       if (!flow) {
         console.log(`[FlowManager] Failed to get or attach flow ${runId}`);
         return;
@@ -200,6 +202,20 @@ export class FlowManager {
       // Always stop heartbeat updates and release memory object
       this.stopHeartbeatUpdates(runId);
       this.activeFlows.delete(runId);
+      
+      // Clear heartbeat from storage to indicate no active handler
+      if (flow) {
+        try {
+          const shared = await flow.getShared();
+          if (shared) {
+            shared.lastHeartbeat = undefined;
+            await flow.setShared(shared);
+            console.log(`[FlowManager] Cleared heartbeat for flow ${runId}`);
+          }
+        } catch (error) {
+          console.error(`[FlowManager] Failed to clear heartbeat for flow ${runId}:`, error);
+        }
+      }
     }
   }
 
@@ -262,8 +278,8 @@ export class FlowManager {
       // Clear callToAction to indicate user input has been processed
       shared.callToAction = null;
 
-      // Update heartbeat when resuming flow after user input
-      shared.lastHeartbeat = Date.now();
+      // Clear heartbeat to allow immediate flow resumption
+      shared.lastHeartbeat = undefined;
 
       // Save updated state
       await flow.setShared(shared);
