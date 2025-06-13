@@ -330,7 +330,7 @@ export class FlowManager {
     if (!flow) {
       // Try to attach from storage
       try {
-        const startNode = createFlowNodes(models);
+        const startNode = createFlowNodes(models, runId);
         flow = await PersistedFlow.attach<SharedStorage>(kv, runId, startNode);
         this.activeFlows.set(runId, flow);
       } catch (error) {
@@ -352,7 +352,7 @@ export class FlowManager {
     shared: SharedStorage
   ): Promise<{ success: boolean }> {
     try {
-      const startNode = createFlowNodes(models);
+      const startNode = createFlowNodes(models, runId);
       const flow = new PersistedFlow<SharedStorage>(startNode, kv, runId);
 
       // Only initialize the record, no execution

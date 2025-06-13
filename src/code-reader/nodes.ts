@@ -16,10 +16,12 @@ export enum Actions {
 
 export class GetEntryFileNode extends Node {
   llm: LLM;
+  runId: string;
 
-  constructor(llm: LLM, maxRetries?: number) {
+  constructor(llm: LLM, runId: string, maxRetries?: number) {
     super(maxRetries);
     this.llm = llm;
+    this.runId = runId;
   }
 
   async prep(shared: SharedStorage): Promise<Pick<SharedStorage, "basic">> {
@@ -31,8 +33,16 @@ export class GetEntryFileNode extends Node {
   async exec(
     prepRes: Pick<SharedStorage, "basic">
   ): Promise<Pick<SharedStorage, "nextFile"> | { askUser: string }> {
+    console.log(
+      `[${this.runId}] GetEntryFileNode.exec: Starting LLM call for entry file selection`
+    );
+
     const { decision, next_file, ask_user } = await this.llm.getEntryFile(
       prepRes
+    );
+
+    console.log(
+      `[${this.runId}] GetEntryFileNode.exec: LLM call completed, decision: ${decision}`
     );
 
     if (decision === "need_more_info") {
@@ -65,8 +75,11 @@ export class GetEntryFileNode extends Node {
 }
 
 export class ImproveBasicInputNode extends Node {
-  constructor(maxRetries?: number) {
+  runId: string;
+
+  constructor(runId: string, maxRetries?: number) {
     super(maxRetries);
+    this.runId = runId;
   }
 
   async post(
@@ -85,10 +98,12 @@ export class ImproveBasicInputNode extends Node {
 
 export class AnalyzeFileNode extends Node {
   llm: LLM;
+  runId: string;
 
-  constructor(llm: LLM, maxRetries?: number) {
+  constructor(llm: LLM, runId: string, maxRetries?: number) {
     super(maxRetries);
     this.llm = llm;
+    this.runId = runId;
   }
 
   async prep(
@@ -114,25 +129,46 @@ export class AnalyzeFileNode extends Node {
     | null
     | { needsRegeneration: true; reason: string }
   > {
+    console.log(
+      `[${this.runId}] AnalyzeFileNode.exec: Starting file analysis process`
+    );
+
     let targetFileName: string | undefined;
     let toAnalyzeContent: string;
 
     if (prepRes.userFeedback?.action === "reject") {
+      console.log(
+        `[${this.runId}] AnalyzeFileNode.exec: Processing reject feedback, requesting new file from LLM`
+      );
+
       // Any reject feedback: let LLM choose a new file
       // Call LLM with empty content to get new file suggestion
       const result = await this.llm.analyzeFile(prepRes, "");
 
+      console.log(
+        `[${this.runId}] AnalyzeFileNode.exec: LLM call for new file selection completed`
+      );
+
       if ("analysis_complete" in result) {
+        console.log(
+          `[${this.runId}] AnalyzeFileNode.exec: Analysis marked as complete by LLM`
+        );
         return null;
       }
 
       targetFileName = result.next_focus_proposal.next_filename;
+      console.log(
+        `[${this.runId}] AnalyzeFileNode.exec: LLM suggested file: ${targetFileName}`
+      );
 
       // Validate the suggested file exists and hasn't been analyzed
       const targetFileExists = prepRes.basic.files.some(
         (file) => file.path === targetFileName
       );
       if (!targetFileExists) {
+        console.log(
+          `[${this.runId}] AnalyzeFileNode.exec: LLM suggested file not found in available files`
+        );
         return {
           needsRegeneration: true,
           reason:
@@ -144,6 +180,9 @@ export class AnalyzeFileNode extends Node {
         (file) => file.path === targetFileName
       );
       if (targetFile?.status === "done" && targetFile.summary) {
+        console.log(
+          `[${this.runId}] AnalyzeFileNode.exec: LLM suggested file already analyzed`
+        );
         return {
           needsRegeneration: true,
           reason:
@@ -152,10 +191,19 @@ export class AnalyzeFileNode extends Node {
       }
 
       // File is valid, load content for analysis
+      console.log(
+        `[${this.runId}] AnalyzeFileNode.exec: Starting file content read for ${targetFileName}`
+      );
       toAnalyzeContent = await readFileFromStorage(targetFileName, prepRes);
+      console.log(
+        `[${this.runId}] AnalyzeFileNode.exec: File content read completed, size: ${toAnalyzeContent.length} chars`
+      );
     } else {
       // Normal flow - use next file
       targetFileName = prepRes.nextFile?.name;
+      console.log(
+        `[${this.runId}] AnalyzeFileNode.exec: Processing normal flow for file: ${targetFileName}`
+      );
 
       if (!targetFileName) {
         throw new Error("No file specified for analysis");
@@ -166,6 +214,9 @@ export class AnalyzeFileNode extends Node {
         (file) => file.path === targetFileName
       );
       if (!targetFileExists) {
+        console.log(
+          `[${this.runId}] AnalyzeFileNode.exec: Target file not found in available files`
+        );
         return {
           needsRegeneration: true,
           reason: "File not found in available files, requesting regeneration",
@@ -176,6 +227,9 @@ export class AnalyzeFileNode extends Node {
         (file) => file.path === targetFileName
       );
       if (targetFile?.status === "done" && targetFile.summary) {
+        console.log(
+          `[${this.runId}] AnalyzeFileNode.exec: Target file already analyzed`
+        );
         return {
           needsRegeneration: true,
           reason:
@@ -184,17 +238,35 @@ export class AnalyzeFileNode extends Node {
       }
 
       // File is valid, load content for analysis
+      console.log(
+        `[${this.runId}] AnalyzeFileNode.exec: Starting file content read for ${targetFileName}`
+      );
       toAnalyzeContent = await readFileFromStorage(targetFileName, prepRes);
+      console.log(
+        `[${this.runId}] AnalyzeFileNode.exec: File content read completed, size: ${toAnalyzeContent.length} chars`
+      );
     }
 
     // Analyze the file content
+    console.log(
+      `[${this.runId}] AnalyzeFileNode.exec: Starting LLM analysis for ${targetFileName}`
+    );
     const result = await this.llm.analyzeFile(prepRes, toAnalyzeContent);
+    console.log(
+      `[${this.runId}] AnalyzeFileNode.exec: LLM analysis completed for ${targetFileName}`
+    );
 
     if ("analysis_complete" in result) {
       // Analysis is complete, no more files to analyze
+      console.log(
+        `[${this.runId}] AnalyzeFileNode.exec: Analysis marked as complete by LLM`
+      );
       return null;
     }
 
+    console.log(
+      `[${this.runId}] AnalyzeFileNode.exec: Analysis successful, next file: ${result.next_focus_proposal.next_filename}`
+    );
     // Continue with next file
     return {
       currentFile: {
@@ -241,8 +313,11 @@ export class AnalyzeFileNode extends Node {
 }
 
 export class UserFeedbackNode extends Node {
-  constructor(maxRetries?: number) {
+  runId: string;
+
+  constructor(runId: string, maxRetries?: number) {
     super(maxRetries);
+    this.runId = runId;
   }
 
   async post(
@@ -261,10 +336,12 @@ export class UserFeedbackNode extends Node {
 
 export class ReduceHistoryNode extends Node {
   llm: LLM;
+  runId: string;
 
-  constructor(llm: LLM, maxRetries?: number) {
+  constructor(llm: LLM, runId: string, maxRetries?: number) {
     super(maxRetries);
     this.llm = llm;
+    this.runId = runId;
   }
 
   async prep(
@@ -305,12 +382,22 @@ export class ReduceHistoryNode extends Node {
       updatedFiles: any[];
     }
   > {
+    console.log(
+      `[${this.runId}] ReduceHistoryNode.exec: Starting history reduction process`
+    );
+
     // Step 1: Determine current summary based on user feedback
     let currentSummary = "";
     if (prepRes.userFeedback?.action === "refined") {
       currentSummary = prepRes.userFeedback.userSummary;
+      console.log(
+        `[${this.runId}] ReduceHistoryNode.exec: Using refined summary from user feedback`
+      );
     } else if (prepRes.userFeedback?.action === "accept") {
       currentSummary = prepRes.currentFile?.analysis?.summary || "";
+      console.log(
+        `[${this.runId}] ReduceHistoryNode.exec: Using accepted summary from analysis`
+      );
     } else {
       throw new Error(
         "Unexpected user feedback action: " + prepRes.userFeedback?.action
@@ -322,6 +409,10 @@ export class ReduceHistoryNode extends Node {
     const currentFilePath = prepRes.currentFile?.name;
 
     if (currentFilePath && currentSummary) {
+      console.log(
+        `[${this.runId}] ReduceHistoryNode.exec: Updating file status for ${currentFilePath}`
+      );
+
       // Find and update the file with summary and status
       const fileIndex = updatedFiles.findIndex(
         (f) => f.path === currentFilePath
@@ -338,9 +429,16 @@ export class ReduceHistoryNode extends Node {
         filename: currentFilePath,
         summary: currentSummary,
       });
+
+      console.log(
+        `[${this.runId}] ReduceHistoryNode.exec: Added to summaries buffer, current buffer size: ${prepRes.summariesBuffer.length}`
+      );
     }
 
     if (prepRes.summariesBuffer.length < 5 && !prepRes.completed) {
+      console.log(
+        `[${this.runId}] ReduceHistoryNode.exec: Buffer not full (${prepRes.summariesBuffer.length}/5) and analysis not completed, skipping LLM reduction`
+      );
       return {
         reducedOutput: prepRes.reducedOutput,
         summariesBuffer: prepRes.summariesBuffer,
@@ -349,12 +447,18 @@ export class ReduceHistoryNode extends Node {
     }
 
     // Step 3: Use LLM to reduce history with new information
+    console.log(
+      `[${this.runId}] ReduceHistoryNode.exec: Starting LLM history reduction with ${prepRes.summariesBuffer.length} summaries`
+    );
     const { reduced_output } = await this.llm.reduceHistory({
       basic: { ...prepRes.basic, files: updatedFiles },
       reducedOutput: prepRes.reducedOutput,
       summariesBuffer: prepRes.summariesBuffer,
       userFeedback: prepRes.userFeedback,
     });
+    console.log(
+      `[${this.runId}] ReduceHistoryNode.exec: LLM history reduction completed`
+    );
 
     return {
       reducedOutput: reduced_output,
@@ -383,8 +487,11 @@ export class ReduceHistoryNode extends Node {
 }
 
 export class FinishNode extends Node {
-  constructor(maxRetries?: number) {
+  runId: string;
+
+  constructor(runId: string, maxRetries?: number) {
     super(maxRetries);
+    this.runId = runId;
   }
 
   async post(
@@ -399,8 +506,11 @@ export class FinishNode extends Node {
 }
 
 export class WaitingForBasicInputImprovementNode extends Node {
-  constructor(maxRetries?: number) {
+  runId: string;
+
+  constructor(runId: string, maxRetries?: number) {
     super(maxRetries);
+    this.runId = runId;
   }
 
   async post(
@@ -420,8 +530,11 @@ export class WaitingForBasicInputImprovementNode extends Node {
 }
 
 export class WaitingForUserFeedbackNode extends Node {
-  constructor(maxRetries?: number) {
+  runId: string;
+
+  constructor(runId: string, maxRetries?: number) {
     super(maxRetries);
+    this.runId = runId;
   }
 
   async post(

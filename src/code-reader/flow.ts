@@ -16,20 +16,21 @@ import { LLM, ModelSet } from "./utils/llm";
 const MAX_RETRIES = 3;
 
 // Create and configure the flow nodes
-export function createFlowNodes(models: ModelSet) {
+export function createFlowNodes(models: ModelSet, runid: string) {
   const llm = new LLM(models);
 
-  const getEntryFileNode = new GetEntryFileNode(llm, MAX_RETRIES);
-  const improveBasicInputNode = new ImproveBasicInputNode(MAX_RETRIES);
+  const getEntryFileNode = new GetEntryFileNode(llm, runid, MAX_RETRIES);
+  const improveBasicInputNode = new ImproveBasicInputNode(runid, MAX_RETRIES);
   const waitingForBasicInputImprovementNode =
-    new WaitingForBasicInputImprovementNode(MAX_RETRIES);
-  const analyzeFileNode = new AnalyzeFileNode(llm, MAX_RETRIES);
-  const userFeedbackNode = new UserFeedbackNode(MAX_RETRIES);
+    new WaitingForBasicInputImprovementNode(runid, MAX_RETRIES);
+  const analyzeFileNode = new AnalyzeFileNode(llm, runid, MAX_RETRIES);
+  const userFeedbackNode = new UserFeedbackNode(runid, MAX_RETRIES);
   const waitingForUserFeedbackNode = new WaitingForUserFeedbackNode(
+    runid,
     MAX_RETRIES
   );
-  const reduceHistoryNode = new ReduceHistoryNode(llm, MAX_RETRIES);
-  const finishNode = new FinishNode(MAX_RETRIES);
+  const reduceHistoryNode = new ReduceHistoryNode(llm, runid, MAX_RETRIES);
+  const finishNode = new FinishNode(runid, MAX_RETRIES);
 
   // Configure node connections
   getEntryFileNode.on(Actions.DO_ANALYZE, analyzeFileNode);
@@ -68,8 +69,10 @@ export function createPersistedFlow(
   models: ModelSet,
   runId?: string
 ): PersistedFlow<SharedStorage> {
-  const startNode = createFlowNodes(models);
-  return new PersistedFlow<SharedStorage>(startNode, kvStore, runId);
+  const flowRunId =
+    runId || `flow-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const startNode = createFlowNodes(models, flowRunId);
+  return new PersistedFlow<SharedStorage>(startNode, kvStore, flowRunId);
 }
 
 // Export the PersistedFlow class and related utilities
