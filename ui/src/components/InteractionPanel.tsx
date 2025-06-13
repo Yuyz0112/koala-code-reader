@@ -124,22 +124,34 @@ export function InteractionPanel({
     }
 
     return (
-      <Card className="border-gray-200 bg-gray-50 h-full">
+      <Card className="border-blue-200 bg-blue-50 h-full">
         <CardHeader>
-          <CardTitle className="text-gray-800 flex items-center gap-2">
+          <CardTitle className="text-blue-800 flex items-center gap-2">
+            <div className="w-5 h-5 border-2 border-blue-300 border-t-blue-600 rounded-full animate-spin"></div>
             AI Assistant Status
           </CardTitle>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-blue-600">
             The AI is currently working on your analysis
+            <span className="inline-flex items-center gap-1 ml-1">
+              <span className="w-1 h-1 bg-blue-500 rounded-full animate-bounce"></span>
+              <span
+                className="w-1 h-1 bg-blue-500 rounded-full animate-bounce"
+                style={{ animationDelay: "0.1s" }}
+              ></span>
+              <span
+                className="w-1 h-1 bg-blue-500 rounded-full animate-bounce"
+                style={{ animationDelay: "0.2s" }}
+              ></span>
+            </span>
           </p>
         </CardHeader>
         <CardContent>
           <div className="space-y-4 text-sm text-gray-700">
-            <div className="p-3 bg-white rounded-md border border-gray-200">
+            <div className="p-3 bg-white rounded-md border border-blue-200">
               <p className="font-medium text-gray-800 mb-2">
                 What's happening now:
               </p>
-              <ul className="space-y-1 text-gray-600">
+              <ul className="space-y-2 text-gray-600">
                 <li>• AI is analyzing your repository files</li>
                 <li>• Processing code structure and patterns</li>
                 <li>• Generating summaries and insights</li>
@@ -150,7 +162,7 @@ export function InteractionPanel({
               <p className="font-medium text-blue-800 mb-2">
                 💡 What you can do:
               </p>
-              <ul className="space-y-1 text-blue-700">
+              <ul className="space-y-2 text-blue-700">
                 <li>• Monitor progress in the Analysis Progress panel</li>
                 <li>
                   • View current file being analyzed in the Current File tab
@@ -160,29 +172,24 @@ export function InteractionPanel({
               </ul>
             </div>
 
-            <div className="p-3 bg-green-50 rounded-md border border-green-200">
-              <p className="font-medium text-green-800 mb-2">
-                🎯 Feedback modes you might see:
-              </p>
-              <ul className="space-y-1 text-green-700">
-                <li>
-                  • <strong>Approve:</strong> Confirm AI analysis is correct
-                </li>
-                <li>
-                  • <strong>Refine:</strong> Provide improved version of
-                  analysis
-                </li>
-                <li>
-                  • <strong>Reject:</strong> Explain why analysis is incorrect
-                </li>
-              </ul>
-            </div>
-
-            <div className="text-center py-2">
-              <p className="text-xs text-gray-500 italic">
-                This panel will show interaction options when the AI needs your
-                input
-              </p>
+            <div className="text-center py-4">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-gray-200">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
+                  <div
+                    className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
+                    style={{ animationDelay: "0.1s" }}
+                  ></div>
+                  <div
+                    className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"
+                    style={{ animationDelay: "0.2s" }}
+                  ></div>
+                </div>
+                <p className="text-xs text-gray-500">
+                  This panel will show interaction options when the AI needs
+                  your input
+                </p>
+              </div>
             </div>
           </div>
         </CardContent>

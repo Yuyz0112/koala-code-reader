@@ -228,14 +228,16 @@ function App() {
             </Tabs>
           </div>
 
-          <div className="lg:col-span-1 h-full overflow-hidden">
-            <InteractionPanel
-              requestType={currentRequestType}
-              requestData={currentRequestData}
-              onSendResponse={handleUserInteraction}
-              flowStatus={flowStatus}
-            />
-          </div>
+          {analysisStarted && (
+            <div className="lg:col-span-1 h-full overflow-hidden">
+              <InteractionPanel
+                requestType={currentRequestType}
+                requestData={currentRequestData}
+                onSendResponse={handleUserInteraction}
+                flowStatus={flowStatus}
+              />
+            </div>
+          )}
         </div>
       </div>
 
