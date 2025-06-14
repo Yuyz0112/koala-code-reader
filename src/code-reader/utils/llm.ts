@@ -5,7 +5,7 @@ import {
   reduceHistoryPrompt,
 } from "./prompts";
 import { SharedStorage } from "./storage";
-import { generateText, LanguageModelV1 } from "ai";
+import { streamText, LanguageModelV1 } from "ai";
 
 function parseMessageToYaml<T = any>(input: string): T {
   const yamlCodeBlockRegex = /```(?:ya?ml)\s*\n([\s\S]*?)\n```/gi;
@@ -25,6 +25,45 @@ function parseMessageToYaml<T = any>(input: string): T {
   }
 }
 
+async function streamToText(
+  model: LanguageModelV1,
+  prompt: string
+): Promise<string> {
+  const startTime = Date.now();
+  let chunks = 0;
+  let totalChars = 0;
+  let accumulatedText = "";
+
+  console.log(`[LLM] Starting stream generation`);
+
+  const { textStream } = streamText({
+    model,
+    prompt,
+  });
+
+  for await (const textChunk of textStream) {
+    chunks++;
+    totalChars += textChunk.length;
+    accumulatedText += textChunk;
+
+    const elapsed = Date.now() - startTime;
+    const charsPerSecond = totalChars / (elapsed / 1000);
+
+    console.debug(
+      `[LLM] Chunk ${chunks}: +${
+        textChunk.length
+      } chars, total: ${totalChars} chars, speed: ${charsPerSecond.toFixed(
+        1
+      )} chars/s`
+    );
+  }
+
+  const totalTime = Date.now() - startTime;
+  const avgSpeed = totalChars / (totalTime / 1000);
+
+  return accumulatedText;
+}
+
 export type ModelSet = {
   default: LanguageModelV1;
 };
@@ -40,10 +79,7 @@ export class LLM {
     const prompt = getEntryFilePrompt(params);
 
     try {
-      const { text } = await generateText({
-        model: this.models.default,
-        prompt,
-      });
+      const text = await streamToText(this.models.default, prompt);
 
       const result = parseMessageToYaml<{
         decision: "entry_file_found" | "need_more_info";
@@ -57,7 +93,11 @@ export class LLM {
       return result;
     } catch (error) {
       console.error(`[LLM] getEntryFile failed:`, error);
-      throw new Error(`LLM getEntryFile call failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `LLM getEntryFile call failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
     }
   }
 
@@ -76,10 +116,7 @@ export class LLM {
     );
 
     try {
-      const { text } = await generateText({
-        model: this.models.default,
-        prompt,
-      });
+      const text = await streamToText(this.models.default, prompt);
 
       const result = parseMessageToYaml<
         | {
@@ -101,7 +138,11 @@ export class LLM {
       return result;
     } catch (error) {
       console.error(`[LLM] analyzeFile failed:`, error);
-      throw new Error(`LLM analyzeFile call failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `LLM analyzeFile call failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
     }
   }
 
@@ -114,10 +155,7 @@ export class LLM {
     const prompt = reduceHistoryPrompt(params);
 
     try {
-      const { text } = await generateText({
-        model: this.models.default,
-        prompt,
-      });
+      const text = await streamToText(this.models.default, prompt);
 
       const result = parseMessageToYaml<{
         reduced_output: string;
@@ -126,7 +164,11 @@ export class LLM {
       return result;
     } catch (error) {
       console.error(`[LLM] reduceHistory failed:`, error);
-      throw new Error(`LLM reduceHistory call failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `LLM reduceHistory call failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
     }
   }
 }
