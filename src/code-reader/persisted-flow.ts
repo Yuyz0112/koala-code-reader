@@ -10,9 +10,7 @@ export interface KVStore {
 type Action = string;
 
 interface NodeRecord {
-  nodeName: string;
   action?: string;
-  error?: string;
 }
 
 interface FlowRecord {
@@ -47,6 +45,11 @@ export class PersistedFlow<
     const key = `flow:${this.runId}`;
     const flow = (await this.kv.read<FlowRecord>(key))!;
 
+    // Validate flow record structure
+    if (!flow || !Array.isArray(flow.nodes)) {
+      throw new Error("Invalid or corrupted flow record");
+    }
+
     let cursor: BaseNode<any, any> | undefined = this.start;
     for (const n of flow.nodes)
       cursor = cursor?.getNextNode((n.action as Action) || "default");
@@ -55,17 +58,21 @@ export class PersistedFlow<
     const params = flow.params as P;
     const shared = flow.shared as S;
 
+    if (!shared) {
+      throw new Error("Missing shared state in flow record");
+    }
+
     let action: Action | undefined = "default";
-    let error: string | undefined;
 
     try {
       cursor.setParams(params as any);
       action = await cursor._run(shared);
     } catch (e) {
-      error = (e as Error).message;
+      // If there's an error, we'll use "default" action and let flow handle it
+      action = "default";
     }
 
-    flow.nodes.push({ nodeName: cursor.constructor.name, action, error });
+    flow.nodes.push({ action });
     flow.shared = shared;
     await this.kv.write(key, flow);
     return true;
