@@ -63,7 +63,8 @@ export class FlowManager {
     // Clear any existing heartbeat interval
     this.stopHeartbeatUpdates(runId);
 
-    const intervalId = setInterval(async () => {
+    // Immediately update heartbeat first to mark flow as actively processing
+    const updateHeartbeat = async () => {
       try {
         const shared = await flow.getShared();
         if (shared) {
@@ -79,8 +80,13 @@ export class FlowManager {
         // Clear the interval on error to prevent further attempts
         this.stopHeartbeatUpdates(runId);
       }
-    }, HEARTBEAT_INTERVAL);
+    };
 
+    // Update immediately
+    updateHeartbeat();
+
+    // Then set up periodic updates
+    const intervalId = setInterval(updateHeartbeat, HEARTBEAT_INTERVAL);
     this.heartbeatIntervals.set(runId, intervalId);
   }
 
