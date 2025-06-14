@@ -12,31 +12,42 @@ import {
 import { SharedStorage } from "./utils/storage";
 import { PersistedFlow, KVStore } from "./persisted-flow";
 import { LLM, ModelSet } from "./utils/llm";
+import { MemoryLayer } from "./utils/memory-layer";
 import { readFileFromStorage } from "./utils/fs";
 
 const MAX_RETRIES = 3;
 
 // Create and configure the flow nodes
-export function createFlowNodes(models: ModelSet, runid: string) {
+export function createFlowNodes(
+  models: ModelSet,
+  memoryLayer: MemoryLayer,
+  runId: string
+) {
   const llm = new LLM(models);
 
-  const getEntryFileNode = new GetEntryFileNode(llm, runid, MAX_RETRIES);
-  const improveBasicInputNode = new ImproveBasicInputNode(runid, MAX_RETRIES);
+  const getEntryFileNode = new GetEntryFileNode(llm, runId, MAX_RETRIES);
+  const improveBasicInputNode = new ImproveBasicInputNode(runId, MAX_RETRIES);
   const waitingForBasicInputImprovementNode =
-    new WaitingForBasicInputImprovementNode(runid, MAX_RETRIES);
+    new WaitingForBasicInputImprovementNode(runId, MAX_RETRIES);
   const analyzeFileNode = new AnalyzeFileNode(
     llm,
     readFileFromStorage,
-    runid,
+    memoryLayer,
+    runId,
     MAX_RETRIES
   );
-  const userFeedbackNode = new UserFeedbackNode(runid, MAX_RETRIES);
+  const userFeedbackNode = new UserFeedbackNode(runId, MAX_RETRIES);
   const waitingForUserFeedbackNode = new WaitingForUserFeedbackNode(
-    runid,
+    runId,
     MAX_RETRIES
   );
-  const reduceHistoryNode = new ReduceHistoryNode(llm, runid, MAX_RETRIES);
-  const finishNode = new FinishNode(runid, MAX_RETRIES);
+  const reduceHistoryNode = new ReduceHistoryNode(
+    llm,
+    memoryLayer,
+    runId,
+    MAX_RETRIES
+  );
+  const finishNode = new FinishNode(runId, MAX_RETRIES);
 
   // Configure node connections
   getEntryFileNode.on(Actions.DO_ANALYZE, analyzeFileNode);
@@ -73,14 +84,14 @@ export function createFlowNodes(models: ModelSet, runid: string) {
 export function createPersistedFlow(
   kvStore: KVStore,
   models: ModelSet,
+  memoryLayer: MemoryLayer,
   runId?: string
 ): PersistedFlow<SharedStorage> {
   const flowRunId =
     runId || `flow-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  const startNode = createFlowNodes(models, flowRunId);
+  const startNode = createFlowNodes(models, memoryLayer, flowRunId);
   return new PersistedFlow<SharedStorage>(startNode, kvStore, flowRunId);
 }
 
 // Export the PersistedFlow class and related utilities
 export { PersistedFlow, type KVStore } from "./persisted-flow";
-export { R2KVStore } from "./utils/r2-kv-store";

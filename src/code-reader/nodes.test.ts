@@ -12,6 +12,7 @@ import {
 } from "./nodes";
 import { LLM } from "./utils/llm";
 import { SharedStorage } from "./utils/storage";
+import { MemoryLayer } from "./utils/memory-layer";
 
 // Test utility functions
 function createMockLLM(): LLM {
@@ -19,6 +20,13 @@ function createMockLLM(): LLM {
     getEntryFile: vi.fn(),
     analyzeFile: vi.fn(),
     reduceHistory: vi.fn(),
+  } as any;
+}
+
+function createMockMemoryLayer(): MemoryLayer {
+  return {
+    set: vi.fn().mockResolvedValue(undefined),
+    retrieve: vi.fn().mockResolvedValue([]),
   } as any;
 }
 
@@ -209,6 +217,7 @@ describe("AnalyzeFileNode", () => {
     filePath: string,
     storage: { basic: SharedStorage["basic"] }
   ) => Promise<string>;
+  let mockMemoryLayer: MemoryLayer;
   let node: AnalyzeFileNode;
   let sharedStorage: SharedStorage;
   const runId = "test-run-id";
@@ -216,7 +225,13 @@ describe("AnalyzeFileNode", () => {
   beforeEach(() => {
     mockLLM = createMockLLM();
     mockReadFileFromStorage = createMockReadFileFromStorage();
-    node = new AnalyzeFileNode(mockLLM, mockReadFileFromStorage, runId);
+    mockMemoryLayer = createMockMemoryLayer();
+    node = new AnalyzeFileNode(
+      mockLLM,
+      mockReadFileFromStorage,
+      mockMemoryLayer,
+      runId
+    );
     sharedStorage = createMockSharedStorage();
   });
 
@@ -349,7 +364,11 @@ describe("AnalyzeFileNode", () => {
         "src/index.ts",
         prepRes
       );
-      expect(mockLLM.analyzeFile).toHaveBeenCalledWith(prepRes, "file content");
+      expect(mockLLM.analyzeFile).toHaveBeenCalledWith(
+        prepRes,
+        "file content",
+        []
+      );
       expect(result).toBeNull();
     });
 
@@ -625,13 +644,15 @@ describe("WaitingForUserFeedbackNode", () => {
 
 describe("ReduceHistoryNode", () => {
   let mockLLM: LLM;
+  let mockMemoryLayer: MemoryLayer;
   let node: ReduceHistoryNode;
   let sharedStorage: SharedStorage;
   const runId = "test-run-id";
 
   beforeEach(() => {
     mockLLM = createMockLLM();
-    node = new ReduceHistoryNode(mockLLM, runId);
+    mockMemoryLayer = createMockMemoryLayer();
+    node = new ReduceHistoryNode(mockLLM, mockMemoryLayer, runId);
     sharedStorage = createMockSharedStorage();
 
     // Set up default test data

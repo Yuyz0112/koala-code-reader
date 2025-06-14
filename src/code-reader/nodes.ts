@@ -1,6 +1,7 @@
 import { Node } from "pocketflow";
 import { FileItem, SharedStorage } from "./utils/storage";
 import { LLM } from "./utils/llm";
+import { MemoryLayer, StorageContext } from "./utils/memory-layer";
 
 export enum Actions {
   IMPROVE_BASIC_INPUT = "improveBasicInput",
@@ -101,6 +102,7 @@ export class AnalyzeFileNode extends Node {
     filePath: string,
     storage: { basic: SharedStorage["basic"] }
   ) => Promise<string>;
+  memoryLayer: MemoryLayer; // Required memory layer for context retrieval
   runId: string;
 
   constructor(
@@ -109,12 +111,14 @@ export class AnalyzeFileNode extends Node {
       filePath: string,
       storage: { basic: SharedStorage["basic"] }
     ) => Promise<string>,
+    memoryLayer: MemoryLayer, // Required parameter before runId
     runId: string,
     maxRetries?: number
   ) {
     super(maxRetries);
     this.llm = llm;
     this.readFileFromStorage = readFileFromStorage;
+    this.memoryLayer = memoryLayer;
     this.runId = runId;
   }
 
@@ -205,11 +209,40 @@ export class AnalyzeFileNode extends Node {
       `[${this.runId}] AnalyzeFileNode: File content read completed, size: ${toAnalyzeContent.length} chars`
     );
 
+    // Retrieve relevant context from Memory Layer
+    let relevantContexts: string[] = [];
+    try {
+      console.log(
+        `[${this.runId}] AnalyzeFileNode: Retrieving context from memory layer`
+      );
+      const storageContext: StorageContext = {
+        files: prepRes.basic.files,
+      };
+      relevantContexts = await this.memoryLayer.retrieve(
+        targetFileName,
+        toAnalyzeContent,
+        storageContext,
+        { runId: this.runId }
+      );
+      console.log(
+        `[${this.runId}] AnalyzeFileNode: Retrieved ${relevantContexts.length} context items from memory`
+      );
+    } catch (error) {
+      console.warn(
+        `[${this.runId}] AnalyzeFileNode: Failed to retrieve memory context:`,
+        error
+      );
+    }
+
     console.log(
       `[${this.runId}] AnalyzeFileNode: Starting LLM analysis for ${targetFileName}`
     );
 
-    const result = await this.llm.analyzeFile(prepRes, toAnalyzeContent);
+    const result = await this.llm.analyzeFile(
+      prepRes,
+      toAnalyzeContent,
+      relevantContexts
+    );
 
     console.log(
       `[${this.runId}] AnalyzeFileNode: LLM analysis completed for ${targetFileName}`
@@ -332,11 +365,18 @@ export class UserFeedbackNode extends Node {
 
 export class ReduceHistoryNode extends Node {
   llm: LLM;
+  memoryLayer: MemoryLayer;
   runId: string;
 
-  constructor(llm: LLM, runId: string, maxRetries?: number) {
+  constructor(
+    llm: LLM,
+    memoryLayer: MemoryLayer,
+    runId: string,
+    maxRetries?: number
+  ) {
     super(maxRetries);
     this.llm = llm;
+    this.memoryLayer = memoryLayer;
     this.runId = runId;
   }
 
@@ -425,6 +465,25 @@ export class ReduceHistoryNode extends Node {
         filename: currentFilePath,
         understanding: currentUnderstanding,
       });
+
+      // Store final understanding in Memory Layer
+      try {
+        console.log(
+          `[${this.runId}] ReduceHistoryNode.exec: Storing final understanding in memory layer for ${currentFilePath}`
+        );
+        await this.memoryLayer.set(currentFilePath, currentUnderstanding, {
+          runId: this.runId,
+          timestamp: Date.now(),
+        });
+        console.log(
+          `[${this.runId}] ReduceHistoryNode.exec: Successfully stored understanding in memory`
+        );
+      } catch (error) {
+        console.warn(
+          `[${this.runId}] ReduceHistoryNode.exec: Failed to store understanding in memory:`,
+          error
+        );
+      }
 
       console.log(
         `[${this.runId}] ReduceHistoryNode.exec: Added to understandings buffer, current buffer size: ${prepRes.understandingsBuffer.length}`

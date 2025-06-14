@@ -5,7 +5,7 @@
 
 import { KVStore } from "../persisted-flow";
 
-export class R2KVStore implements KVStore {
+class R2KVStore implements KVStore {
   constructor(private r2: R2Bucket) {}
 
   async read<T = unknown>(key: string): Promise<T | undefined> {
@@ -57,4 +57,14 @@ export class R2KVStore implements KVStore {
       return [];
     }
   }
+}
+
+// Helper function to create KV store
+export async function createKVStore(environment: CloudflareBindings) {
+  if (!environment.FLOW_STORAGE_BUCKET) {
+    throw new Error(
+      "FLOW_STORAGE_BUCKET is required for persistent flow storage"
+    );
+  }
+  return new R2KVStore(environment.FLOW_STORAGE_BUCKET);
 }

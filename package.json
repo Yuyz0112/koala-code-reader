@@ -2,7 +2,7 @@
   "name": "koala-code-reader",
   "scripts": {
     "dev": "concurrently \"npm run dev:api\" \"npm run dev:ui\" --names \"API,UI\" --prefix-colors \"blue,green\"",
-    "dev:api": "wrangler dev",
+    "dev:api": "wrangler dev --experimental-vectorize-bind-to-prod",
     "dev:ui": "cd ui && npm run dev",
     "deploy": "wrangler deploy --minify",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings",

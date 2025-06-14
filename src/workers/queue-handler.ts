@@ -1,16 +1,7 @@
 import { FlowExecutionMessage, FlowManager } from "../code-reader/flow-manager";
-import { createModels } from "../routes/flows";
-import { R2KVStore } from "../code-reader/flow";
-
-// Helper function to create KV store
-async function createKVStore(environment: CloudflareBindings) {
-  if (!environment.FLOW_STORAGE_BUCKET) {
-    throw new Error(
-      "FLOW_STORAGE_BUCKET is required for persistent flow storage"
-    );
-  }
-  return new R2KVStore(environment.FLOW_STORAGE_BUCKET);
-}
+import { createKVStore } from "../code-reader/providers/r2-kv-store";
+import { createModels } from "../code-reader/providers/model";
+import { createMemoryLayer } from "../code-reader/providers/memory-layer";
 
 /**
  * Queue consumer for flow execution
@@ -52,8 +43,16 @@ export async function handleFlowQueue(
       const kvStore = await createKVStore(env);
       const models = createModels(env);
 
+      // Create memory layer with production providers
+      const memoryLayer = createMemoryLayer(env);
+
       // Add execution timeout protection
-      const executionPromise = FlowManager.triggerFlow(kvStore, models, runId);
+      const executionPromise = FlowManager.triggerFlow(
+        kvStore,
+        models,
+        memoryLayer,
+        runId
+      );
       const timeoutPromise = new Promise((_, reject) => {
         setTimeout(
           () => reject(new Error("Flow execution timeout")),

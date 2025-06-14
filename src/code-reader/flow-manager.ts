@@ -3,6 +3,7 @@ import { createFlowNodes } from "./flow";
 import { SharedStorage } from "./utils/storage";
 import type { KVStore } from "./persisted-flow";
 import { ModelSet } from "./utils/llm";
+import { MemoryLayer } from "./utils/memory-layer";
 
 // Heartbeat configuration constants
 const HEARTBEAT_INTERVAL = 10 * 1000; // 10 seconds
@@ -127,6 +128,7 @@ export class FlowManager {
   static async triggerFlow(
     kv: KVStore,
     models: ModelSet,
+    memoryLayer: MemoryLayer,
     runId: string
   ): Promise<void> {
     console.log(`[FlowManager] triggerFlow called for runId: ${runId}`);
@@ -146,7 +148,7 @@ export class FlowManager {
 
     try {
       console.log(`[FlowManager] Attempting to get or attach flow ${runId}`);
-      flow = await this.getOrAttachFlow(kv, models, runId);
+      flow = await this.getOrAttachFlow(kv, models, memoryLayer, runId);
       if (!flow) {
         console.log(`[FlowManager] Failed to get or attach flow ${runId}`);
         return;
@@ -202,7 +204,7 @@ export class FlowManager {
       // Always stop heartbeat updates and release memory object
       this.stopHeartbeatUpdates(runId);
       this.activeFlows.delete(runId);
-      
+
       // Clear heartbeat from storage to indicate no active handler
       if (flow) {
         try {
@@ -213,7 +215,10 @@ export class FlowManager {
             console.log(`[FlowManager] Cleared heartbeat for flow ${runId}`);
           }
         } catch (error) {
-          console.error(`[FlowManager] Failed to clear heartbeat for flow ${runId}:`, error);
+          console.error(
+            `[FlowManager] Failed to clear heartbeat for flow ${runId}:`,
+            error
+          );
         }
       }
     }
@@ -225,6 +230,7 @@ export class FlowManager {
   static async handleUserInput(
     kv: KVStore,
     models: ModelSet,
+    memoryLayer: MemoryLayer,
     queue: Queue<FlowExecutionMessage>,
     runId: string,
     inputType: string,
@@ -232,7 +238,7 @@ export class FlowManager {
   ): Promise<{ success: boolean; message: string }> {
     try {
       // Get current shared state
-      const flow = await this.getOrAttachFlow(kv, models, runId);
+      const flow = await this.getOrAttachFlow(kv, models, memoryLayer, runId);
       if (!flow) {
         return { success: false, message: "Flow not found" };
       }
@@ -338,6 +344,7 @@ export class FlowManager {
   private static async getOrAttachFlow(
     kv: KVStore,
     models: ModelSet,
+    memoryLayer: MemoryLayer,
     runId: string
   ): Promise<PersistedFlow<SharedStorage> | null> {
     // Check if flow exists in memory
@@ -346,7 +353,7 @@ export class FlowManager {
     if (!flow) {
       // Try to attach from storage
       try {
-        const startNode = createFlowNodes(models, runId);
+        const startNode = createFlowNodes(models, memoryLayer, runId);
         flow = await PersistedFlow.attach<SharedStorage>(kv, runId, startNode);
         this.activeFlows.set(runId, flow);
       } catch (error) {
@@ -364,11 +371,12 @@ export class FlowManager {
   static async initializeFlow(
     kv: KVStore,
     models: ModelSet,
+    memoryLayer: MemoryLayer,
     runId: string,
     shared: SharedStorage
   ): Promise<{ success: boolean }> {
     try {
-      const startNode = createFlowNodes(models, runId);
+      const startNode = createFlowNodes(models, memoryLayer, runId);
       const flow = new PersistedFlow<SharedStorage>(startNode, kv, runId);
 
       // Only initialize the record, no execution

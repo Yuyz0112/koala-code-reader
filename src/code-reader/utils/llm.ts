@@ -59,9 +59,14 @@ export class LLM {
       SharedStorage,
       "basic" | "nextFile" | "currentFile" | "userFeedback"
     >,
-    toAnalyzeContent: string
+    toAnalyzeContent: string,
+    relevantContexts: string[] = [] // Add context parameter with default empty array
   ) {
-    const prompt = analyzeFilePrompt(params, toAnalyzeContent);
+    const prompt = analyzeFilePrompt(
+      params,
+      toAnalyzeContent,
+      relevantContexts
+    );
 
     const { text } = await generateText({
       model: this.models.default,

@@ -64,6 +64,8 @@ No files available
 This is the beginning of the analysis - no files have been analyzed yet.
 </AnalysisHistory>
 
+
+
 <CurrentScenario>
 **INCORPORATE REFINEMENT AND CONTINUE**: next.ts
 User provided refined understanding for current.ts:
@@ -139,6 +141,8 @@ No files available
 This is the beginning of the analysis - no files have been analyzed yet.
 </AnalysisHistory>
 
+
+
 <CurrentScenario>
 **ANALYZE NEW FILE**: index.ts
 Reason for analyzing this file: Entry point
@@ -209,6 +213,8 @@ No files available
 <AnalysisHistory>
 This is the beginning of the analysis - no files have been analyzed yet.
 </AnalysisHistory>
+
+
 
 <CurrentScenario>
 **CONTINUE TO NEXT FILE**: next.ts (Previous analysis was accepted)
@@ -281,12 +287,87 @@ No files available
 This is the beginning of the analysis - no files have been analyzed yet.
 </AnalysisHistory>
 
+
+
 <CurrentScenario>
 **ANALYZE NEW FILE**: empty.ts
 Reason for analyzing this file: Check empty
 </CurrentScenario>
 
 <Note>File content will be loaded automatically for analysis</Note>
+
+<Instructions>
+1. **Analyze the file content** thoroughly to understand its purpose, key functionality, and role
+2. **Provide your analysis and understanding** of what this file does and why it's important
+3. **Propose the next logical file** to analyze based on your understanding
+
+**CRITICAL ANALYSIS PRINCIPLES**:
+
+1. **HIGH-CONFIDENCE SELECTION ONLY**: Only propose to read a file if you have HIGH CONFIDENCE (>80%) that it is directly relevant to the current user task and main goal. Do not propose files for exploratory purposes or "just to see what's there."
+
+2. **NO REDUNDANT READING**: Never propose to re-read files that are already listed in the Analysis History. Those files have been completely analyzed and their understanding is already captured in the summaries above.
+
+3. **TARGETED ANALYSIS**: Before proposing the next file, clearly articulate why that specific file is essential for understanding the main goal. Avoid generic reasoning like "to understand the project better" - be specific about what gap in understanding this file will fill.
+
+4. **EFFICIENCY OVER COMPLETENESS**: It's better to analyze fewer, highly relevant files thoroughly than to read many files with marginal relevance. Focus on the files that are most critical to achieving the main goal.
+
+Focus on understanding the codebase incrementally, but only when there's clear justification for reading additional files.
+
+**Important**: Consider the analysis history and main goal to determine if you have sufficient understanding. If you believe you have analyzed enough files to achieve the main goal and understand the key aspects of the codebase, you should complete the analysis rather than continuing indefinitely.
+</Instructions>
+
+<OutputFormat>
+**Every response MUST consist solely of valid YAML that conforms exactly to the schema below—no extra text, explanations, or comments.**
+
+**If continuing analysis:**
+\`\`\`yaml
+current_analysis:
+  filename: "current/file/path.ext"        # string - file being analyzed
+  understanding: "Analysis and insights based on main goal"      # string - purpose, functionality, notable points
+next_focus_proposal:
+  next_filename: "next/file/path.ext"      # string - exactly ONE file to analyze next
+  reason: "Why this is the logical next step"  # string - reasoning for next file choice
+\`\`\`
+
+**If analysis is complete:**
+\`\`\`yaml
+analysis_complete: true
+final_understanding: "Overall comprehensive understanding"  # string - synthesis of all analyzed files
+\`\`\`
+</OutputFormat>
+
+Analyze the file and provide your assessment:"
+`;
+
+exports[`Prompts > analyzeFilePrompt > should handle empty relevant contexts array 1`] = `
+"You are a code analysis assistant conducting iterative understanding of a codebase.
+
+<AnalysisContext>
+Repository: test
+Main Goal: Learn
+
+
+File Structure:
+No files available
+</AnalysisContext>
+
+<AnalysisHistory>
+This is the beginning of the analysis - no files have been analyzed yet.
+</AnalysisHistory>
+
+
+
+<CurrentScenario>
+**ANALYZE NEW FILE**: standalone.ts
+Reason for analyzing this file: Analyze standalone
+</CurrentScenario>
+
+<FileContent>
+File: standalone.ts
+\`\`\`
+const standalone = true;
+\`\`\`
+</FileContent>
 
 <Instructions>
 1. **Analyze the file content** thoroughly to understand its purpose, key functionality, and role
@@ -346,6 +427,8 @@ No files available
 <AnalysisHistory>
 This is the beginning of the analysis - no files have been analyzed yet.
 </AnalysisHistory>
+
+
 
 <CurrentScenario>
 **INCORPORATE REFINEMENT AND CONTINUE**: next.ts
@@ -421,6 +504,8 @@ No files available
 <AnalysisHistory>
 This is the beginning of the analysis - no files have been analyzed yet.
 </AnalysisHistory>
+
+
 
 <CurrentScenario>
 **RE-ANALYZE CURRENT FILE**: current.ts (Previous analysis was rejected)
@@ -499,6 +584,8 @@ Progress: You have analyzed 1 files. Consider whether this provides sufficient u
 **CRITICAL**: These files have already been analyzed and summarized. DO NOT propose to re-read any of these files. The analysis above represents the complete understanding from these files.
 </AnalysisHistory>
 
+
+
 <CurrentScenario>
 **ANALYZE NEW FILE**: next.ts
 Reason for analyzing this file: Next step
@@ -508,6 +595,89 @@ Reason for analyzing this file: Next step
 File: next.ts
 \`\`\`
 const b = 5;
+\`\`\`
+</FileContent>
+
+<Instructions>
+1. **Analyze the file content** thoroughly to understand its purpose, key functionality, and role
+2. **Provide your analysis and understanding** of what this file does and why it's important
+3. **Propose the next logical file** to analyze based on your understanding
+
+**CRITICAL ANALYSIS PRINCIPLES**:
+
+1. **HIGH-CONFIDENCE SELECTION ONLY**: Only propose to read a file if you have HIGH CONFIDENCE (>80%) that it is directly relevant to the current user task and main goal. Do not propose files for exploratory purposes or "just to see what's there."
+
+2. **NO REDUNDANT READING**: Never propose to re-read files that are already listed in the Analysis History. Those files have been completely analyzed and their understanding is already captured in the summaries above.
+
+3. **TARGETED ANALYSIS**: Before proposing the next file, clearly articulate why that specific file is essential for understanding the main goal. Avoid generic reasoning like "to understand the project better" - be specific about what gap in understanding this file will fill.
+
+4. **EFFICIENCY OVER COMPLETENESS**: It's better to analyze fewer, highly relevant files thoroughly than to read many files with marginal relevance. Focus on the files that are most critical to achieving the main goal.
+
+Focus on understanding the codebase incrementally, but only when there's clear justification for reading additional files.
+
+**Important**: Consider the analysis history and main goal to determine if you have sufficient understanding. If you believe you have analyzed enough files to achieve the main goal and understand the key aspects of the codebase, you should complete the analysis rather than continuing indefinitely.
+</Instructions>
+
+<OutputFormat>
+**Every response MUST consist solely of valid YAML that conforms exactly to the schema below—no extra text, explanations, or comments.**
+
+**If continuing analysis:**
+\`\`\`yaml
+current_analysis:
+  filename: "current/file/path.ext"        # string - file being analyzed
+  understanding: "Analysis and insights based on main goal"      # string - purpose, functionality, notable points
+next_focus_proposal:
+  next_filename: "next/file/path.ext"      # string - exactly ONE file to analyze next
+  reason: "Why this is the logical next step"  # string - reasoning for next file choice
+\`\`\`
+
+**If analysis is complete:**
+\`\`\`yaml
+analysis_complete: true
+final_understanding: "Overall comprehensive understanding"  # string - synthesis of all analyzed files
+\`\`\`
+</OutputFormat>
+
+Analyze the file and provide your assessment:"
+`;
+
+exports[`Prompts > analyzeFilePrompt > should include relevant contexts when provided 1`] = `
+"You are a code analysis assistant conducting iterative understanding of a codebase.
+
+<AnalysisContext>
+Repository: test
+Main Goal: Learn
+
+
+File Structure:
+No files available
+</AnalysisContext>
+
+<AnalysisHistory>
+This is the beginning of the analysis - no files have been analyzed yet.
+</AnalysisHistory>
+
+<RelevantContext>
+The following related file understandings might be useful for analyzing the current file:
+
+1. File: related1.ts
+This file handles authentication logic
+
+2. File: related2.ts
+This file manages user sessions
+
+**Note**: Use this context to enhance your understanding but focus primarily on the current file being analyzed.
+</RelevantContext>
+
+<CurrentScenario>
+**ANALYZE NEW FILE**: target.ts
+Reason for analyzing this file: Analyze target
+</CurrentScenario>
+
+<FileContent>
+File: target.ts
+\`\`\`
+const target = true;
 \`\`\`
 </FileContent>
 

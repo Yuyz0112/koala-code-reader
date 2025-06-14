@@ -1,8 +1,9 @@
 import { Hono } from "hono";
-import { createOpenAI } from "@ai-sdk/openai";
 import { FlowManager } from "../code-reader/flow-manager";
 import type { SharedStorage } from "../code-reader/utils/storage";
-import { R2KVStore } from "../code-reader/flow";
+import { createKVStore } from "../code-reader/providers/r2-kv-store";
+import { createModels } from "../code-reader/providers/model";
+import { createMemoryLayer } from "../code-reader/providers/memory-layer";
 
 const flows = new Hono();
 
@@ -26,28 +27,6 @@ flows.get("/", async (c) => {
   }
 });
 
-// Helper function to create KV store
-async function createKVStore(environment: CloudflareBindings) {
-  if (!environment.FLOW_STORAGE_BUCKET) {
-    throw new Error(
-      "FLOW_STORAGE_BUCKET is required for persistent flow storage"
-    );
-  }
-
-  return new R2KVStore(environment.FLOW_STORAGE_BUCKET);
-}
-
-export function createModels(environment: CloudflareBindings) {
-  const models = {
-    default: createOpenAI({
-      apiKey: environment.OPENAI_API_KEY as string,
-      baseURL: `https://clear-robin-12.deno.dev/v1`,
-    })("gpt-4o"),
-  };
-
-  return models;
-}
-
 // Create a new flow
 flows.post("/", async (c) => {
   try {
@@ -63,7 +42,7 @@ flows.post("/", async (c) => {
 
     const shared: SharedStorage = {
       basic,
-      summariesBuffer: [],
+      understandingsBuffer: [],
       reducedOutput: "",
       completed: false,
       lastHeartbeat: Date.now(), // Initialize heartbeat for new flows
@@ -75,12 +54,16 @@ flows.post("/", async (c) => {
     // Initialize models
     const models = createModels(c.env as CloudflareBindings);
 
+    // Create memory layer
+    const memoryLayer = createMemoryLayer(c.env as CloudflareBindings);
+
     const flowRunId = runId || crypto.randomUUID();
 
     // Initialize flow
     const result = await FlowManager.initializeFlow(
       kvStore,
       models,
+      memoryLayer,
       flowRunId,
       shared
     );
@@ -153,10 +136,14 @@ flows.post("/:runId/input", async (c) => {
     const kvStore = await createKVStore(c.env as CloudflareBindings);
     const models = createModels(c.env as CloudflareBindings);
 
+    // Create memory layer
+    const memoryLayer = createMemoryLayer(c.env as CloudflareBindings);
+
     // Handle user input via FlowManager
     const result = await FlowManager.handleUserInput(
       kvStore,
       models,
+      memoryLayer,
       (c.env as CloudflareBindings).FLOW_QUEUE,
       runId,
       inputType,

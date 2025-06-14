@@ -66,7 +66,8 @@ export const analyzeFilePrompt = (
     currentFile,
     userFeedback,
   }: Pick<SharedStorage, "basic" | "nextFile" | "currentFile" | "userFeedback">,
-  toAnalyzeContent: string
+  toAnalyzeContent: string,
+  relevantContexts: string[] = [] // Add context parameter with default empty array
 ) => {
   const allUnderstandings = getAnalyzedUnderstandings(basic.files);
   // Determine the analysis scenario based on userFeedback
@@ -155,6 +156,20 @@ Progress: You have analyzed ${
     : "This is the beginning of the analysis - no files have been analyzed yet."
 }
 </AnalysisHistory>
+
+${
+  relevantContexts.length > 0
+    ? `<RelevantContext>
+The following related file understandings might be useful for analyzing the current file:
+
+${relevantContexts
+  .map((context, index) => `${index + 1}. ${context}`)
+  .join("\n\n")}
+
+**Note**: Use this context to enhance your understanding but focus primarily on the current file being analyzed.
+</RelevantContext>`
+    : ""
+}
 
 <CurrentScenario>
 ${analysisScenario}

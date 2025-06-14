@@ -22,7 +22,13 @@
         "queue": "flow-execution-queue"
       }
     ]
-  }
+  },
+  "vectorize": [
+    {
+      "binding": "VECTORIZE",
+      "index_name": "embeddings-index"
+    }
+  ]
   // "compatibility_flags": [
   //   "nodejs_compat"
   // ],

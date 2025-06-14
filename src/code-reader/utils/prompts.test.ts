@@ -67,7 +67,8 @@ describe("Prompts", () => {
           currentFile: undefined,
           userFeedback: undefined,
         },
-        "const x = 1;"
+        "const x = 1;",
+        [] // No relevant contexts
       );
       expect(prompt).toMatchSnapshot();
     });
@@ -88,7 +89,8 @@ describe("Prompts", () => {
           },
           userFeedback: { action: "accept" },
         },
-        "const y = 2;"
+        "const y = 2;",
+        [] // No relevant contexts
       );
       expect(prompt).toMatchSnapshot();
     });
@@ -109,7 +111,8 @@ describe("Prompts", () => {
           },
           userFeedback: { action: "reject", reason: "Missing key points" },
         },
-        "const z = 3;"
+        "const z = 3;",
+        [] // No relevant contexts
       );
       expect(prompt).toMatchSnapshot();
     });
@@ -134,7 +137,8 @@ describe("Prompts", () => {
             reason: "More accurate",
           },
         },
-        "const a = 4;"
+        "const a = 4;",
+        [] // No relevant contexts
       );
       expect(prompt).toMatchSnapshot();
     });
@@ -159,7 +163,8 @@ describe("Prompts", () => {
           currentFile: undefined,
           userFeedback: undefined,
         },
-        "const b = 5;"
+        "const b = 5;",
+        [] // No relevant contexts
       );
       expect(prompt).toMatchSnapshot();
     });
@@ -177,7 +182,49 @@ describe("Prompts", () => {
           currentFile: undefined,
           userFeedback: undefined,
         },
-        ""
+        "",
+        [] // No relevant contexts
+      );
+      expect(prompt).toMatchSnapshot();
+    });
+
+    it("should include relevant contexts when provided", () => {
+      const prompt = analyzeFilePrompt(
+        {
+          basic: {
+            repoName: "test",
+            mainGoal: "Learn",
+            specificAreas: undefined,
+            files: [],
+          },
+          nextFile: { name: "target.ts", reason: "Analyze target" },
+          currentFile: undefined,
+          userFeedback: undefined,
+        },
+        "const target = true;",
+        [
+          "File: related1.ts\nThis file handles authentication logic",
+          "File: related2.ts\nThis file manages user sessions",
+        ]
+      );
+      expect(prompt).toMatchSnapshot();
+    });
+
+    it("should handle empty relevant contexts array", () => {
+      const prompt = analyzeFilePrompt(
+        {
+          basic: {
+            repoName: "test",
+            mainGoal: "Learn",
+            specificAreas: undefined,
+            files: [],
+          },
+          nextFile: { name: "standalone.ts", reason: "Analyze standalone" },
+          currentFile: undefined,
+          userFeedback: undefined,
+        },
+        "const standalone = true;",
+        []
       );
       expect(prompt).toMatchSnapshot();
     });
@@ -288,7 +335,8 @@ describe("Prompts", () => {
             reason: "Fix",
           },
         },
-        "const code = true;"
+        "const code = true;",
+        [] // No relevant contexts
       );
       expect(prompt).toMatchSnapshot();
     });
