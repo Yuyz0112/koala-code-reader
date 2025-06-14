@@ -39,19 +39,26 @@ export class LLM {
   async getEntryFile(params: Pick<SharedStorage, "basic">) {
     const prompt = getEntryFilePrompt(params);
 
-    const { text } = await generateText({
-      model: this.models.default,
-      prompt,
-    });
+    try {
+      const { text } = await generateText({
+        model: this.models.default,
+        prompt,
+      });
 
-    return parseMessageToYaml<{
-      decision: "entry_file_found" | "need_more_info";
-      next_file?: {
-        name: string;
-        reason: string;
-      };
-      ask_user?: string;
-    }>(text);
+      const result = parseMessageToYaml<{
+        decision: "entry_file_found" | "need_more_info";
+        next_file?: {
+          name: string;
+          reason: string;
+        };
+        ask_user?: string;
+      }>(text);
+
+      return result;
+    } catch (error) {
+      console.error(`[LLM] getEntryFile failed:`, error);
+      throw new Error(`LLM getEntryFile call failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   async analyzeFile(
@@ -68,27 +75,34 @@ export class LLM {
       relevantContexts
     );
 
-    const { text } = await generateText({
-      model: this.models.default,
-      prompt,
-    });
+    try {
+      const { text } = await generateText({
+        model: this.models.default,
+        prompt,
+      });
 
-    return parseMessageToYaml<
-      | {
-          current_analysis: {
-            filename: string;
-            understanding: string;
-          };
-          next_focus_proposal: {
-            next_filename: string;
-            reason: string;
-          };
-        }
-      | {
-          analysis_complete: true;
-          final_understanding: string;
-        }
-    >(text);
+      const result = parseMessageToYaml<
+        | {
+            current_analysis: {
+              filename: string;
+              understanding: string;
+            };
+            next_focus_proposal: {
+              next_filename: string;
+              reason: string;
+            };
+          }
+        | {
+            analysis_complete: true;
+            final_understanding: string;
+          }
+      >(text);
+
+      return result;
+    } catch (error) {
+      console.error(`[LLM] analyzeFile failed:`, error);
+      throw new Error(`LLM analyzeFile call failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 
   async reduceHistory(
@@ -99,13 +113,20 @@ export class LLM {
   ) {
     const prompt = reduceHistoryPrompt(params);
 
-    const { text } = await generateText({
-      model: this.models.default,
-      prompt,
-    });
+    try {
+      const { text } = await generateText({
+        model: this.models.default,
+        prompt,
+      });
 
-    return parseMessageToYaml<{
-      reduced_output: string;
-    }>(text);
+      const result = parseMessageToYaml<{
+        reduced_output: string;
+      }>(text);
+
+      return result;
+    } catch (error) {
+      console.error(`[LLM] reduceHistory failed:`, error);
+      throw new Error(`LLM reduceHistory call failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 }

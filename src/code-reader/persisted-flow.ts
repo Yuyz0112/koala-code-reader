@@ -52,7 +52,7 @@ export class PersistedFlow<
 
     let cursor: BaseNode<any, any> | undefined = this.start;
     for (const n of flow.nodes)
-      cursor = cursor?.getNextNode((n.action as Action) || "default");
+      cursor = cursor?.getNextNode(n.action as Action);
     if (!cursor) return false;
 
     const params = flow.params as P;
@@ -62,14 +62,15 @@ export class PersistedFlow<
       throw new Error("Missing shared state in flow record");
     }
 
-    let action: Action | undefined = "default";
+    let action: Action | undefined;
 
     try {
       cursor.setParams(params as any);
       action = await cursor._run(shared);
     } catch (e) {
-      // If there's an error, we'll use "default" action and let flow handle it
-      action = "default";
+      // Don't write anything when node execution fails
+      // Let the upper layer handle retries or error recovery
+      throw e;
     }
 
     flow.nodes.push({ action });

@@ -266,34 +266,27 @@ describe("PersistedFlow", () => {
     });
 
     describe("error handling", () => {
-      it("should use 'default' action when node execution throws", async () => {
+      it("should throw error when node execution fails", async () => {
         const flow = new PersistedFlow(errorNode, mockKV, "test-run-id");
         await flow.init({ data: "test" });
 
-        const result = await flow.step();
+        await expect(flow.step()).rejects.toThrow("Node execution failed");
 
-        expect(result).toBe(true);
+        // Verify no data was written when execution failed
         const record = await mockKV.read(`flow:test-run-id`);
-        expect(record.nodes[0].action).toBe("default");
+        expect(record.nodes).toHaveLength(0); // No nodes should be added
       });
 
-      it("should continue execution after error", async () => {
-        // Setup error node to connect to another node on "default"
-        errorNode.on("default", endNode);
-
+      it("should not modify shared state when node execution fails", async () => {
         const flow = new PersistedFlow(errorNode, mockKV, "test-run-id");
-        await flow.init({ data: "test" });
+        const initialState = { data: "test", count: 42 };
+        await flow.init(initialState);
 
-        // First step: error -> "default"
-        await flow.step();
-        // Second step: should execute endNode
-        const result = await flow.step();
+        await expect(flow.step()).rejects.toThrow("Node execution failed");
 
-        expect(result).toBe(true);
+        // Verify shared state remains unchanged
         const record = await mockKV.read(`flow:test-run-id`);
-        expect(record.nodes).toHaveLength(2);
-        expect(record.nodes[0].action).toBe("default");
-        expect(record.nodes[1].action).toBeUndefined(); // endNode returns undefined
+        expect(record.shared).toEqual(initialState);
       });
     });
   });
