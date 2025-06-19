@@ -41,7 +41,7 @@ export type SharedStorage = {
         reason: string;
       }
     | {
-        action: "refined";
+        action: "refine";
         userUnderstanding: string;
         reason?: string;
       };

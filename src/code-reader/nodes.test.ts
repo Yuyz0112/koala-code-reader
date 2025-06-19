@@ -629,9 +629,9 @@ describe("WaitingForUserFeedbackNode", () => {
       expect(result).toBe(Actions.DO_REDUCE);
     });
 
-    test("should return DO_REDUCE for refined action", async () => {
+    test("should return DO_REDUCE for refine action", async () => {
       sharedStorage.userFeedback = {
-        action: "refined",
+        action: "refine",
         userUnderstanding: "Better understanding",
       };
 
@@ -687,7 +687,7 @@ describe("ReduceHistoryNode", () => {
 
   describe("exec", () => {
     describe("user feedback handling", () => {
-      test("should use refined understanding when userFeedback action is refined", async () => {
+      test("should use refine understanding when userFeedback action is refine", async () => {
         const prepRes = {
           understandingsBuffer: [],
           reducedOutput: "Previous output",
@@ -696,7 +696,7 @@ describe("ReduceHistoryNode", () => {
             analysis: { understanding: "Original understanding" },
           },
           userFeedback: {
-            action: "refined" as const,
+            action: "refine" as const,
             userUnderstanding: "User improved understanding",
           },
           basic: sharedStorage.basic,
@@ -1036,8 +1036,8 @@ describe("ReduceHistoryNode", () => {
             analysis: { understanding: "Current file understanding" },
           },
           userFeedback: {
-            action: "refined" as const,
-            userUnderstanding: "User refined understanding",
+            action: "refine" as const,
+            userUnderstanding: "User refine understanding",
           },
           basic: {
             repoName: "test-repo",
@@ -1068,7 +1068,7 @@ describe("ReduceHistoryNode", () => {
                 path: "src/current.ts",
                 status: "done",
                 type: "file",
-                understanding: "User refined understanding",
+                understanding: "User refine understanding",
               },
             ],
           },
@@ -1080,7 +1080,7 @@ describe("ReduceHistoryNode", () => {
             { filename: "file4.ts", understanding: "Understanding 4" },
             {
               filename: "src/current.ts",
-              understanding: "User refined understanding",
+              understanding: "User refine understanding",
             },
           ],
           userFeedback: prepRes.userFeedback,

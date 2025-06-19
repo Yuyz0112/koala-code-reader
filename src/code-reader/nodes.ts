@@ -424,10 +424,10 @@ export class ReduceHistoryNode extends Node {
 
     // Step 1: Determine current understanding based on user feedback
     let currentUnderstanding = "";
-    if (prepRes.userFeedback?.action === "refined") {
+    if (prepRes.userFeedback?.action === "refine") {
       currentUnderstanding = prepRes.userFeedback.userUnderstanding;
       console.log(
-        `[${this.runId}] ReduceHistoryNode.exec: Using refined understanding from user feedback`
+        `[${this.runId}] ReduceHistoryNode.exec: Using refine understanding from user feedback`
       );
     } else if (prepRes.userFeedback?.action === "accept") {
       currentUnderstanding = prepRes.currentFile?.analysis?.understanding || "";

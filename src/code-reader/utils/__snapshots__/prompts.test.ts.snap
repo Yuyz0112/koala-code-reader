@@ -122,6 +122,10 @@ final_understanding: "Overall comprehensive understanding"  # string - synthesis
 \`\`\`
 </OutputFormat>
 
+<OutputLanguage>
+Use the same language of the "main goal" in the Analyze Context, which is input by the user, so the user can read your understanding.
+</OutputLanguage>
+
 Analyze the file and provide your assessment:"
 `;
 
@@ -194,6 +198,10 @@ analysis_complete: true
 final_understanding: "Overall comprehensive understanding"  # string - synthesis of all analyzed files
 \`\`\`
 </OutputFormat>
+
+<OutputLanguage>
+Use the same language of the "main goal" in the Analyze Context, which is input by the user, so the user can read your understanding.
+</OutputLanguage>
 
 Analyze the file and provide your assessment:"
 `;
@@ -268,6 +276,10 @@ final_understanding: "Overall comprehensive understanding"  # string - synthesis
 \`\`\`
 </OutputFormat>
 
+<OutputLanguage>
+Use the same language of the "main goal" in the Analyze Context, which is input by the user, so the user can read your understanding.
+</OutputLanguage>
+
 Analyze the file and provide your assessment:"
 `;
 
@@ -335,6 +347,10 @@ analysis_complete: true
 final_understanding: "Overall comprehensive understanding"  # string - synthesis of all analyzed files
 \`\`\`
 </OutputFormat>
+
+<OutputLanguage>
+Use the same language of the "main goal" in the Analyze Context, which is input by the user, so the user can read your understanding.
+</OutputLanguage>
 
 Analyze the file and provide your assessment:"
 `;
@@ -409,10 +425,14 @@ final_understanding: "Overall comprehensive understanding"  # string - synthesis
 \`\`\`
 </OutputFormat>
 
+<OutputLanguage>
+Use the same language of the "main goal" in the Analyze Context, which is input by the user, so the user can read your understanding.
+</OutputLanguage>
+
 Analyze the file and provide your assessment:"
 `;
 
-exports[`Prompts > analyzeFilePrompt > should handle refined feedback 1`] = `
+exports[`Prompts > analyzeFilePrompt > should handle refine feedback 1`] = `
 "You are a code analysis assistant conducting iterative understanding of a codebase.
 
 <AnalysisContext>
@@ -485,6 +505,10 @@ analysis_complete: true
 final_understanding: "Overall comprehensive understanding"  # string - synthesis of all analyzed files
 \`\`\`
 </OutputFormat>
+
+<OutputLanguage>
+Use the same language of the "main goal" in the Analyze Context, which is input by the user, so the user can read your understanding.
+</OutputLanguage>
 
 Analyze the file and provide your assessment:"
 `;
@@ -559,6 +583,10 @@ analysis_complete: true
 final_understanding: "Overall comprehensive understanding"  # string - synthesis of all analyzed files
 \`\`\`
 </OutputFormat>
+
+<OutputLanguage>
+Use the same language of the "main goal" in the Analyze Context, which is input by the user, so the user can read your understanding.
+</OutputLanguage>
 
 Analyze the file and provide your assessment:"
 `;
@@ -637,6 +665,10 @@ analysis_complete: true
 final_understanding: "Overall comprehensive understanding"  # string - synthesis of all analyzed files
 \`\`\`
 </OutputFormat>
+
+<OutputLanguage>
+Use the same language of the "main goal" in the Analyze Context, which is input by the user, so the user can read your understanding.
+</OutputLanguage>
 
 Analyze the file and provide your assessment:"
 `;
@@ -720,6 +752,10 @@ analysis_complete: true
 final_understanding: "Overall comprehensive understanding"  # string - synthesis of all analyzed files
 \`\`\`
 </OutputFormat>
+
+<OutputLanguage>
+Use the same language of the "main goal" in the Analyze Context, which is input by the user, so the user can read your understanding.
+</OutputLanguage>
 
 Analyze the file and provide your assessment:"
 `;
@@ -926,6 +962,10 @@ reduced_output: |
 \`\`\`
 </OutputFormat>
 
+<OutputLanguage>
+Use the same language of the main goal, which is input by the user.
+</OutputLanguage>
+
 Integrate the new analysis and provide the updated reduced output:"
 `;
 
@@ -986,6 +1026,10 @@ reduced_output: |
 \`\`\`
 </OutputFormat>
 
+<OutputLanguage>
+Use the same language of the main goal, which is input by the user.
+</OutputLanguage>
+
 Integrate the new analysis and provide the updated reduced output:"
 `;
 
@@ -1007,7 +1051,7 @@ Previous content
 File: file3.ts
 Analysis: Third file
 
-User Feedback: refined
+User Feedback: refine
 (User provided refined understanding)
 
 </NewInformation>
@@ -1045,6 +1089,10 @@ reduced_output: |
   # This should be a FULL document, not an incremental update
 \`\`\`
 </OutputFormat>
+
+<OutputLanguage>
+Use the same language of the main goal, which is input by the user.
+</OutputLanguage>
 
 Integrate the new analysis and provide the updated reduced output:"
 `;
@@ -1106,6 +1154,10 @@ reduced_output: |
   # This should be a FULL document, not an incremental update
 \`\`\`
 </OutputFormat>
+
+<OutputLanguage>
+Use the same language of the main goal, which is input by the user.
+</OutputLanguage>
 
 Integrate the new analysis and provide the updated reduced output:"
 `;

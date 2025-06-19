@@ -105,7 +105,7 @@ User's rejection reason: ${userFeedback.reason}`;
 2. **Address the concerns** raised in the rejection reason
 3. **Provide a corrected analysis** that better reflects the file's actual purpose and functionality
 4. **Propose the next logical file** based on the corrected understanding`;
-  } else if (userFeedback.action === "refined") {
+  } else if (userFeedback.action === "refine") {
     // User provided refined understanding, incorporate it and continue
     analysisScenario = `**INCORPORATE REFINEMENT AND CONTINUE**: ${
       nextFile?.name || "Next file"
@@ -224,6 +224,10 @@ final_understanding: "Overall comprehensive understanding"  # string - synthesis
 \`\`\`
 </OutputFormat>
 
+<OutputLanguage>
+Use the same language of the "main goal" in the Analyze Context, which is input by the user, so the user can read your understanding.
+</OutputLanguage>
+
 Analyze the file and provide your assessment:`;
 };
 
@@ -266,7 +270,7 @@ ${understandingsBuffer
 
 User Feedback: ${userFeedback?.action || "No feedback"}
 ${
-  userFeedback?.action === "refined"
+  userFeedback?.action === "refine"
     ? `(User provided refined understanding)`
     : ""
 }
@@ -311,6 +315,10 @@ reduced_output: |
   # This should be a FULL document, not an incremental update
 \`\`\`
 </OutputFormat>
+
+<OutputLanguage>
+Use the same language of the main goal, which is input by the user.
+</OutputLanguage>
 
 Integrate the new analysis and provide the updated reduced output:`;
 };

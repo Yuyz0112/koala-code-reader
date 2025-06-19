@@ -117,7 +117,7 @@ describe("Prompts", () => {
       expect(prompt).toMatchSnapshot();
     });
 
-    it("should handle refined feedback", () => {
+    it("should handle refine feedback", () => {
       const prompt = analyzeFilePrompt(
         {
           basic: {
@@ -132,7 +132,7 @@ describe("Prompts", () => {
             analysis: { understanding: "Old analysis" },
           },
           userFeedback: {
-            action: "refined",
+            action: "refine",
             userUnderstanding: "Better analysis",
             reason: "More accurate",
           },
@@ -278,7 +278,7 @@ describe("Prompts", () => {
           { filename: "file3.ts", understanding: "Third file" },
         ],
         userFeedback: {
-          action: "refined",
+          action: "refine",
           userUnderstanding: "Better",
           reason: "More precise",
         },
@@ -330,7 +330,7 @@ describe("Prompts", () => {
           nextFile: { name: "next.ts", reason: "Next" },
           currentFile: { name: "current.ts" }, // no analysis property
           userFeedback: {
-            action: "refined",
+            action: "refine",
             userUnderstanding: "Better",
             reason: "Fix",
           },
