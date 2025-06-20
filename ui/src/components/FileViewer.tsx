@@ -3,6 +3,7 @@ import { apiClient } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Loader2, FileText, AlertCircle } from "lucide-react";
+import { parseGitHubUrl } from "@/lib/utils";
 
 interface FileViewerProps {
   filePath: string | null;
@@ -30,18 +31,17 @@ export function FileViewer({
     setError(null);
 
     try {
-      // Extract owner and repo from GitHub URL
-      const match = githubUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
-      if (!match) {
+      // Parse GitHub URL
+      const repoInfo = parseGitHubUrl(githubUrl);
+      if (!repoInfo) {
         throw new Error("Invalid GitHub URL format");
       }
 
-      const [, owner, repo] = match;
-      const cleanRepo = repo.replace(/\.git$/, "");
+      const { owner, repo } = repoInfo;
 
       const fileData = await apiClient.readFileFromGitHub(
         owner,
-        cleanRepo,
+        repo,
         filePath,
         githubRef
       );

@@ -6,6 +6,7 @@ import {
   type StartAnalysisRequest,
   type FlowListItem,
 } from "@/lib/api-client";
+import { parseGitHubUrl } from "@/lib/utils";
 
 export const useFlowAPI = () => {
   const [messages, setMessages] = useState<string[]>([]);
@@ -194,9 +195,9 @@ export const useFlowAPI = () => {
   const fetchRepo = useCallback(
     async (repoUrl: string, ref: string) => {
       try {
-        // Extract owner and repo from GitHub URL
-        const match = repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
-        if (!match) {
+        // Parse GitHub URL
+        const repoInfo = parseGitHubUrl(repoUrl);
+        if (!repoInfo) {
           addMessage("❌ Invalid GitHub URL format");
           return {
             success: false,
@@ -204,16 +205,13 @@ export const useFlowAPI = () => {
           };
         }
 
-        const [, owner, repo] = match;
-        const cleanRepo = repo.replace(/\.git$/, "");
+        const { owner, repo } = repoInfo;
 
-        addMessage(
-          `📥 Fetching repository structure for ${owner}/${cleanRepo}...`
-        );
+        addMessage(`📥 Fetching repository structure for ${owner}/${repo}...`);
 
-        const repoData = await apiClient.fetchGitHubRepo(owner, cleanRepo, ref);
+        const repoData = await apiClient.fetchGitHubRepo(owner, repo, ref);
 
-        addMessage(`✅ Repository structure fetched for ${owner}/${cleanRepo}`);
+        addMessage(`✅ Repository structure fetched for ${owner}/${repo}`);
         return { success: true, repoData };
       } catch (error) {
         const errorMessage =
@@ -229,21 +227,20 @@ export const useFlowAPI = () => {
   const readFileFromGitHub = useCallback(
     async (repoUrl: string, filePath: string, ref: string = "main") => {
       try {
-        // Extract owner and repo from GitHub URL
-        const match = repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
-        if (!match) {
+        // Parse GitHub URL
+        const repoInfo = parseGitHubUrl(repoUrl);
+        if (!repoInfo) {
           return {
             success: false,
             error: "Please provide a valid GitHub repository URL.",
           };
         }
 
-        const [, owner, repo] = match;
-        const cleanRepo = repo.replace(/\.git$/, "");
+        const { owner, repo } = repoInfo;
 
         const fileData = await apiClient.readFileFromGitHub(
           owner,
-          cleanRepo,
+          repo,
           filePath,
           ref
         );

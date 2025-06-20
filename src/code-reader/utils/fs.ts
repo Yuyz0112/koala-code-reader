@@ -33,8 +33,18 @@ export async function readFromGithub(
   ref: string = "main"
 ): Promise<string> {
   try {
+    // Parse and clean the GitHub URL to remove search parameters
+    let cleanUrl: string;
+    try {
+      const url = new URL(repoUrl);
+      cleanUrl = `${url.protocol}//${url.hostname}${url.pathname}`;
+    } catch {
+      // If URL parsing fails, treat as a plain string (fallback for relative URLs)
+      cleanUrl = repoUrl;
+    }
+
     // Parse GitHub repository URL
-    const repoMatch = repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+    const repoMatch = cleanUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
     if (!repoMatch) {
       throw new Error("Invalid GitHub repository URL");
     }
