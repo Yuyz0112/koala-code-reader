@@ -172,7 +172,8 @@ export class AnalyzeFileNode extends Node {
   // Step 2 in exec: Validate target file exists and hasn't been analyzed yet
   private validateFile(
     fileName: string,
-    files: FileItem[]
+    files: FileItem[],
+    allowReanalyze: boolean
   ): { error?: string } {
     const targetFile = files.find((file) => file.path === fileName);
 
@@ -182,7 +183,11 @@ export class AnalyzeFileNode extends Node {
       };
     }
 
-    if (targetFile.status === "done" && targetFile.understanding) {
+    if (
+      !allowReanalyze &&
+      targetFile.status === "done" &&
+      targetFile.understanding
+    ) {
       return {
         error: "File has already been analyzed, please select a different file",
       };
@@ -296,7 +301,12 @@ export class AnalyzeFileNode extends Node {
     }
 
     // Step 2: Validate the target file
-    const validation = this.validateFile(targetFileName, prepRes.basic.files);
+    const allowReanalyze = prepRes.userFeedback?.action === "reject";
+    const validation = this.validateFile(
+      targetFileName,
+      prepRes.basic.files,
+      allowReanalyze
+    );
     if (validation.error) {
       console.log(
         `[${this.runId}] AnalyzeFileNode.exec: File validation failed: ${validation.error}`

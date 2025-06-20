@@ -11,7 +11,7 @@ import {
   WaitingForUserFeedbackNode,
 } from "./nodes";
 import { LLM } from "./utils/llm";
-import { SharedStorage } from "./utils/storage";
+import { SharedStorage, FileItem } from "./utils/storage";
 import { MemoryLayer } from "./utils/memory-layer";
 
 // Test utility functions
@@ -313,7 +313,8 @@ describe("AnalyzeFileNode", () => {
     test("should return error when file is not found", () => {
       const result = node["validateFile"](
         "src/missing.ts",
-        sharedStorage.basic.files
+        sharedStorage.basic.files,
+        false
       );
 
       expect(result).toEqual({
@@ -324,7 +325,8 @@ describe("AnalyzeFileNode", () => {
     test("should return error when file is already analyzed", () => {
       const result = node["validateFile"](
         "src/done.ts",
-        sharedStorage.basic.files
+        sharedStorage.basic.files,
+        false
       );
 
       expect(result).toEqual({
@@ -335,10 +337,47 @@ describe("AnalyzeFileNode", () => {
     test("should return empty object when file is valid", () => {
       const result = node["validateFile"](
         "src/index.ts",
-        sharedStorage.basic.files
+        sharedStorage.basic.files,
+        false
       );
 
       expect(result).toEqual({});
+    });
+
+    test("should allow reanalysis of completed file when allowReanalyze is true", () => {
+      const analyzeFileNode = new AnalyzeFileNode(
+        mockLLM,
+        mockReadFileFromStorage,
+        mockMemoryLayer,
+        "test-run-id"
+      );
+
+      const files: FileItem[] = [
+        {
+          path: "src/completed.ts",
+          type: "file",
+          status: "done",
+          understanding: "Previous analysis result",
+        },
+      ];
+
+      // Should fail when allowReanalyze is false (default)
+      const validationWithoutReanalyze = (analyzeFileNode as any).validateFile(
+        "src/completed.ts",
+        files,
+        false
+      );
+      expect(validationWithoutReanalyze.error).toBe(
+        "File has already been analyzed, please select a different file"
+      );
+
+      // Should pass when allowReanalyze is true
+      const validationWithReanalyze = (analyzeFileNode as any).validateFile(
+        "src/completed.ts",
+        files,
+        true
+      );
+      expect(validationWithReanalyze.error).toBeUndefined();
     });
   });
 
