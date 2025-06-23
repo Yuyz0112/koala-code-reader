@@ -47,11 +47,6 @@ export type SharedStorage = {
         reason?: string;
       };
 
-  understandingsBuffer: Array<{
-    filename: string;
-    understanding: string;
-  }>;
-
   reducedOutput: string;
 
   completed: boolean;

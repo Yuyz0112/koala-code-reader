@@ -1,9 +1,5 @@
 import { parse as parseYaml } from "yaml";
-import {
-  getEntryFilePrompt,
-  analyzeFilePrompt,
-  reduceHistoryPrompt,
-} from "./prompts";
+import { getEntryFilePrompt, analyzeFilePrompt } from "./prompts";
 import { SharedStorage } from "./storage";
 import { streamText, LanguageModelV1 } from "ai";
 
@@ -146,29 +142,20 @@ export class LLM {
     }
   }
 
-  async reduceHistory(
-    params: Pick<
-      SharedStorage,
-      "basic" | "reducedOutput" | "understandingsBuffer" | "userFeedback"
-    >
-  ) {
-    const prompt = reduceHistoryPrompt(params);
-
-    try {
-      const text = await streamToText(this.models.default, prompt);
-
-      const result = parseMessageToYaml<{
-        reduced_output: string;
-      }>(text);
-
-      return result;
-    } catch (error) {
-      console.error(`[LLM] reduceHistory failed:`, error);
-      throw new Error(
-        `LLM reduceHistory call failed: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
+  async agenticWriter(
+    params: Pick<SharedStorage, "basic" | "reducedOutput"> & {
+      memoryLayer: any; // TODO: Import proper type
+      completed: boolean;
     }
+  ) {
+    // TODO: Implement full agentic logic with function calling
+    // For now, return the existing reducedOutput or a placeholder
+    console.log(`[LLM] AgenticWriter called - placeholder implementation`);
+
+    return {
+      final_output:
+        params.reducedOutput ||
+        "Analysis in progress. More files are being analyzed to provide a comprehensive understanding.",
+    };
   }
 }

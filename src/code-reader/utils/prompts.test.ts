@@ -1,9 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  getEntryFilePrompt,
-  analyzeFilePrompt,
-  reduceHistoryPrompt,
-} from "./prompts";
+import { getEntryFilePrompt, analyzeFilePrompt } from "./prompts";
 import type { SharedStorage } from "./storage";
 
 describe("Prompts", () => {
@@ -250,93 +246,6 @@ describe("Prompts", () => {
         },
         []
       );
-      expect(prompt).toMatchSnapshot();
-    });
-  });
-
-  describe("reduceHistoryPrompt", () => {
-    it("should generate first reduction prompt", () => {
-      const prompt = reduceHistoryPrompt({
-        basic: {
-          repoName: "test",
-          mainGoal: "Learn",
-          specificAreas: undefined,
-          files: [],
-        },
-        reducedOutput: "",
-        understandingsBuffer: [
-          { filename: "file1.ts", understanding: "First file" },
-        ],
-        userFeedback: undefined,
-      });
-      expect(prompt).toMatchSnapshot();
-    });
-
-    it("should handle existing reduced output", () => {
-      const prompt = reduceHistoryPrompt({
-        basic: {
-          repoName: "test",
-          mainGoal: "Learn",
-          specificAreas: undefined,
-          files: [],
-        },
-        reducedOutput: "Previous analysis content",
-        understandingsBuffer: [
-          { filename: "file2.ts", understanding: "Second file" },
-        ],
-        userFeedback: undefined,
-      });
-      expect(prompt).toMatchSnapshot();
-    });
-
-    it("should include user feedback", () => {
-      const prompt = reduceHistoryPrompt({
-        basic: {
-          repoName: "test",
-          mainGoal: "Learn",
-          specificAreas: undefined,
-          files: [],
-        },
-        reducedOutput: "Previous content",
-        understandingsBuffer: [
-          { filename: "file3.ts", understanding: "Third file" },
-        ],
-        userFeedback: {
-          action: "refine",
-          userUnderstanding: "Better",
-          reason: "More precise",
-        },
-      });
-      expect(prompt).toMatchSnapshot();
-    });
-
-    it("should show all analyzed files", () => {
-      const prompt = reduceHistoryPrompt({
-        basic: {
-          repoName: "test",
-          mainGoal: "Learn",
-          specificAreas: undefined,
-          files: [
-            {
-              path: "analyzed1.ts",
-              status: "done",
-              type: "file",
-              understanding: "First done",
-            },
-            {
-              path: "analyzed2.ts",
-              status: "done",
-              type: "file",
-              understanding: "Second done",
-            },
-          ],
-        },
-        reducedOutput: "Analysis so far",
-        understandingsBuffer: [
-          { filename: "new.ts", understanding: "New analysis" },
-        ],
-        userFeedback: undefined,
-      });
       expect(prompt).toMatchSnapshot();
     });
   });

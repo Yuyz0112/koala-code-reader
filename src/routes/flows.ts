@@ -42,7 +42,6 @@ flows.post("/", async (c) => {
 
     const shared: SharedStorage = {
       basic,
-      understandingsBuffer: [],
       reducedOutput: "",
       completed: false,
       lastHeartbeat: Date.now(), // Initialize heartbeat for new flows

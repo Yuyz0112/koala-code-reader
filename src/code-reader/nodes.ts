@@ -418,16 +418,10 @@ export class ReduceHistoryNode extends Node {
   ): Promise<
     Pick<
       SharedStorage,
-      | "understandingsBuffer"
-      | "reducedOutput"
-      | "currentFile"
-      | "userFeedback"
-      | "basic"
-      | "completed"
+      "reducedOutput" | "currentFile" | "userFeedback" | "basic" | "completed"
     >
   > {
     return {
-      understandingsBuffer: shared.understandingsBuffer,
       reducedOutput: shared.reducedOutput,
       currentFile: shared.currentFile,
       userFeedback: shared.userFeedback,
@@ -439,15 +433,10 @@ export class ReduceHistoryNode extends Node {
   async exec(
     prepRes: Pick<
       SharedStorage,
-      | "understandingsBuffer"
-      | "reducedOutput"
-      | "currentFile"
-      | "userFeedback"
-      | "basic"
-      | "completed"
+      "reducedOutput" | "currentFile" | "userFeedback" | "basic" | "completed"
     >
   ): Promise<
-    Pick<SharedStorage, "reducedOutput" | "understandingsBuffer"> & {
+    Pick<SharedStorage, "reducedOutput"> & {
       updatedFiles: FileItem[];
     }
   > {
@@ -494,11 +483,6 @@ export class ReduceHistoryNode extends Node {
         };
       }
 
-      prepRes.understandingsBuffer.push({
-        filename: currentFilePath,
-        understanding: currentUnderstanding,
-      });
-
       // Store final understanding in Memory Layer
       try {
         console.log(
@@ -519,38 +503,26 @@ export class ReduceHistoryNode extends Node {
       }
 
       console.log(
-        `[${this.runId}] ReduceHistoryNode.exec: Added to understandings buffer, current buffer size: ${prepRes.understandingsBuffer.length}`
+        `[${this.runId}] ReduceHistoryNode.exec: File understanding stored in memory`
       );
     }
 
-    if (prepRes.understandingsBuffer.length < 5 && !prepRes.completed) {
-      console.log(
-        `[${this.runId}] ReduceHistoryNode.exec: Buffer not full (${prepRes.understandingsBuffer.length}/5) and analysis not completed, skipping LLM reduction`
-      );
-      return {
-        reducedOutput: prepRes.reducedOutput,
-        understandingsBuffer: prepRes.understandingsBuffer,
-        updatedFiles,
-      };
-    }
-
-    // Step 3: Use LLM to reduce history with new information
+    // Step 3: Use AgenticWriter to generate final output based on memory
     console.log(
-      `[${this.runId}] ReduceHistoryNode.exec: Starting LLM history reduction with ${prepRes.understandingsBuffer.length} understandings`
+      `[${this.runId}] ReduceHistoryNode.exec: Starting AgenticWriter for final output generation`
     );
-    const { reduced_output } = await this.llm.reduceHistory({
+    const { final_output } = await this.llm.agenticWriter({
       basic: { ...prepRes.basic, files: updatedFiles },
       reducedOutput: prepRes.reducedOutput,
-      understandingsBuffer: prepRes.understandingsBuffer,
-      userFeedback: prepRes.userFeedback,
+      memoryLayer: this.memoryLayer,
+      completed: prepRes.completed,
     });
     console.log(
-      `[${this.runId}] ReduceHistoryNode.exec: LLM history reduction completed`
+      `[${this.runId}] ReduceHistoryNode.exec: AgenticWriter completed`
     );
 
     return {
-      reducedOutput: reduced_output,
-      understandingsBuffer: [],
+      reducedOutput: final_output,
       updatedFiles,
     };
   }
@@ -558,12 +530,11 @@ export class ReduceHistoryNode extends Node {
   async post(
     shared: SharedStorage,
     _: unknown,
-    execRes: Pick<SharedStorage, "reducedOutput" | "understandingsBuffer"> & {
+    execRes: Pick<SharedStorage, "reducedOutput"> & {
       updatedFiles: FileItem[];
     }
   ): Promise<string | undefined> {
     shared.reducedOutput = execRes.reducedOutput;
-    shared.understandingsBuffer = execRes.understandingsBuffer;
     shared.basic.files = execRes.updatedFiles;
 
     if (shared.completed) {
