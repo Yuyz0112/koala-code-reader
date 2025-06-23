@@ -69,14 +69,14 @@ export function FileList({ files, onFilesChange }: FileListProps) {
 
   const toggleDirectoryStatus = (dirPath: string) => {
     // Find all files under this directory
-    const filesInDir = files.filter(file => 
-      file.path.startsWith(dirPath + "/") || file.path === dirPath
+    const filesInDir = files.filter(
+      (file) => file.path.startsWith(dirPath + "/") || file.path === dirPath
     );
-    
+
     // Check if all files in directory are pending
-    const allPending = filesInDir.every(file => file.status === "pending");
+    const allPending = filesInDir.every((file) => file.status === "pending");
     const newStatus = allPending ? "ignored" : "pending";
-    
+
     const updatedFiles = files.map((file) => {
       if (file.path.startsWith(dirPath + "/") || file.path === dirPath) {
         return {
@@ -90,16 +90,22 @@ export function FileList({ files, onFilesChange }: FileListProps) {
   };
 
   // Get directory status based on its children
-  const getDirectoryStatus = (dirPath: string): "pending" | "ignored" | "mixed" => {
-    const filesInDir = files.filter(file => 
+  const getDirectoryStatus = (
+    dirPath: string
+  ): "pending" | "ignored" | "mixed" => {
+    const filesInDir = files.filter((file) =>
       file.path.startsWith(dirPath + "/")
     );
-    
+
     if (filesInDir.length === 0) return "pending";
-    
-    const pendingCount = filesInDir.filter(file => file.status === "pending").length;
-    const ignoredCount = filesInDir.filter(file => file.status === "ignored").length;
-    
+
+    const pendingCount = filesInDir.filter(
+      (file) => file.status === "pending"
+    ).length;
+    const ignoredCount = filesInDir.filter(
+      (file) => file.status === "ignored"
+    ).length;
+
     if (pendingCount === filesInDir.length) return "pending";
     if (ignoredCount === filesInDir.length) return "ignored";
     return "mixed";
@@ -121,7 +127,7 @@ export function FileList({ files, onFilesChange }: FileListProps) {
     onFilesChange(updatedFiles);
   };
 
-  // Build tree structure (similar to generateFileStructureWithStatus)
+  // Build tree structure
   const buildTree = (): TreeNode => {
     // Show all files, including ignored ones
     const allFiles = files;
@@ -275,10 +281,10 @@ export function FileList({ files, onFilesChange }: FileListProps) {
               className="mr-2"
             />
             <span className="mr-2">📁</span>
-            <span 
+            <span
               className={`text-sm font-mono ${
-                dirStatus === "ignored" 
-                  ? "text-gray-400 line-through" 
+                dirStatus === "ignored"
+                  ? "text-gray-400 line-through"
                   : dirStatus === "mixed"
                   ? "text-amber-600"
                   : "text-gray-600"
@@ -333,7 +339,8 @@ export function FileList({ files, onFilesChange }: FileListProps) {
         </div>
         <div className="flex items-center justify-between mt-1">
           <div className="text-xs text-gray-500">
-            ✓ = Pending (will be analyzed), ✗ = Ignored, ▣ = Mixed (some files selected)
+            ✓ = Pending (will be analyzed), ✗ = Ignored, ▣ = Mixed (some files
+            selected)
           </div>
           <div className="text-xs text-gray-500">
             {files.filter((f) => f.status === "pending").length} pending,{" "}

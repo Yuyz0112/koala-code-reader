@@ -17,6 +17,7 @@ export type SharedStorage = {
     githubRef?: string; // GitHub branch/tag/reference for file reading
 
     askUser?: string; // If current input is insufficient to get entry files, ask user for more information
+    previousWrongPath?: string; // If the LLM selected a wrong path, store it here
   };
 
   currentFile?: {
@@ -64,6 +65,19 @@ export type SharedStorage = {
   lastHeartbeat?: number; // Unix timestamp in milliseconds
 };
 
+// Helper function to extract analyzed understandings from files
+export function getAnalyzedUnderstandings(files: FileItem[]): Array<{
+  filename: string;
+  understanding: string;
+}> {
+  return files
+    .filter((file) => file.status === "done" && file.understanding)
+    .map((file) => ({
+      filename: file.path,
+      understanding: file.understanding!,
+    }));
+}
+
 export function generateFileStructureWithStatus(files: FileItem[]): string {
   if (!files || files.length === 0) {
     return "No files available";
@@ -76,106 +90,55 @@ export function generateFileStructureWithStatus(files: FileItem[]): string {
     return "No visible files available";
   }
 
-  // Build a proper tree structure from flat file paths
-  interface TreeNode {
-    name: string;
-    path: string;
-    type: "file" | "directory";
-    status?: FileStatus;
-    children: Map<string, TreeNode>;
-    isExplicit: boolean; // Whether this node was explicitly in the files array
-  }
-
-  const root: TreeNode = {
-    name: "",
-    path: "",
-    type: "directory",
-    children: new Map(),
-    isExplicit: false,
-  };
-
-  // Build tree structure
-  visibleFiles.forEach((file) => {
-    const pathParts = file.path.split("/").filter((part) => part !== "");
-    let currentNode = root;
-
-    // Create intermediate directories if they don't exist
-    for (let i = 0; i < pathParts.length; i++) {
-      const part = pathParts[i];
-      const currentPath = pathParts.slice(0, i + 1).join("/");
-
-      if (!currentNode.children.has(part)) {
-        const isLastPart = i === pathParts.length - 1;
-        currentNode.children.set(part, {
-          name: part,
-          path: currentPath,
-          type: isLastPart ? file.type : "directory",
-          status: isLastPart ? file.status : "pending",
-          children: new Map(),
-          isExplicit: isLastPart,
-        });
-      }
-
-      currentNode = currentNode.children.get(part)!;
-
-      // Update if this is the actual file/directory from the array
-      if (i === pathParts.length - 1) {
-        currentNode.type = file.type;
-        currentNode.status = file.status;
-        currentNode.isExplicit = true;
-      }
+  // Sort files: directories first, then files, both alphabetically
+  const sortedFiles = visibleFiles.sort((a, b) => {
+    if (a.type !== b.type) {
+      return a.type === "directory" ? -1 : 1;
     }
+    return a.path.localeCompare(b.path);
   });
 
-  // Generate tree display
-  function renderNode(node: TreeNode, depth: number = 0): string[] {
-    const lines: string[] = [];
+  const lines: string[] = [];
 
-    // Sort children: directories first, then files, both alphabetically
-    const sortedChildren = Array.from(node.children.values()).sort((a, b) => {
-      if (a.type !== b.type) {
-        return a.type === "directory" ? -1 : 1;
-      }
-      return a.name.localeCompare(b.name);
-    });
+  // Add header
+  lines.push("Available Files and Directories:");
+  lines.push("");
 
-    sortedChildren.forEach((child) => {
-      const indent = "  ".repeat(depth);
-      const typeIcon = child.type === "directory" ? "📁" : "📄";
+  // Generate simple list with clear status indicators
+  sortedFiles.forEach((file) => {
+    let statusIndicator: string;
+    let statusText: string;
 
-      if (child.isExplicit) {
-        // Only show checkbox for explicitly tracked files/directories
-        const checkbox = child.status === "done" ? "- [x]" : "- [ ]";
-        const displayName =
-          child.type === "directory" ? `${child.name}/` : child.name;
-        lines.push(`${indent}${checkbox} ${typeIcon} ${displayName}`);
-      } else {
-        // For implicit directories (intermediate paths), show without checkbox
-        lines.push(`${indent}📁 ${child.name}/`);
-      }
+    switch (file.status) {
+      case "done":
+        statusIndicator = "✓";
+        statusText = "ANALYZED";
+        break;
+      case "pending":
+        statusIndicator = "○";
+        statusText = "PENDING";
+        break;
+      case "ignored":
+        statusIndicator = "×";
+        statusText = "IGNORED";
+        break;
+      default:
+        statusIndicator = "?";
+        statusText = "UNKNOWN";
+    }
 
-      // Recursively render children
-      if (child.children.size > 0) {
-        lines.push(...renderNode(child, depth + 1));
-      }
-    });
+    const typeIndicator = file.type === "directory" ? "[DIR]" : "[FILE]";
+    const path = file.path;
 
-    return lines;
-  }
+    lines.push(`${statusIndicator} ${typeIndicator} ${path} (${statusText})`);
+  });
 
-  const result = renderNode(root);
-  return result.join("\n");
-}
+  lines.push("");
+  lines.push("Legend:");
+  lines.push("✓ = Already analyzed");
+  lines.push("○ = Available for analysis");
+  lines.push("[DIR] = Directory");
+  lines.push("[FILE] = File");
 
-// Helper function to extract analyzed understandings from files
-export function getAnalyzedUnderstandings(files: FileItem[]): Array<{
-  filename: string;
-  understanding: string;
-}> {
-  return files
-    .filter((file) => file.status === "done" && file.understanding)
-    .map((file) => ({
-      filename: file.path,
-      understanding: file.understanding!,
-    }));
+  return lines.join("\n");
 }

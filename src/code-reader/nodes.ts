@@ -32,7 +32,11 @@ export class GetEntryFileNode extends Node {
 
   async exec(
     prepRes: Pick<SharedStorage, "basic">
-  ): Promise<Pick<SharedStorage, "nextFile"> | { askUser: string }> {
+  ): Promise<
+    | Pick<SharedStorage, "nextFile">
+    | { askUser: string }
+    | { wrongPath: string }
+  > {
     console.log(
       `[${this.runId}] GetEntryFileNode.exec: Starting LLM call for entry file selection`
     );
@@ -50,6 +54,14 @@ export class GetEntryFileNode extends Node {
     }
 
     if (decision === "entry_file_found" && next_file) {
+      const exists = prepRes.basic.files.some((f) => f.path === next_file.name);
+      if (!exists) {
+        console.warn(
+          `[${this.runId}] LLM returned non-existent entry file: ${next_file.name}`
+        );
+        return { wrongPath: next_file.name };
+      }
+
       return {
         nextFile: next_file,
       };
@@ -61,8 +73,16 @@ export class GetEntryFileNode extends Node {
   async post(
     shared: SharedStorage,
     _: unknown,
-    execRes: Pick<SharedStorage, "nextFile"> | { askUser: string }
+    execRes:
+      | Pick<SharedStorage, "nextFile">
+      | { askUser: string }
+      | { wrongPath: string }
   ): Promise<string | undefined> {
+    if ("wrongPath" in execRes) {
+      shared.basic.previousWrongPath = execRes.wrongPath;
+      return Actions.GET_ENTRY_FILE;
+    }
+
     if ("askUser" in execRes) {
       shared.basic.askUser = execRes.askUser;
       return Actions.IMPROVE_BASIC_INPUT;
@@ -245,7 +265,10 @@ export class AnalyzeFileNode extends Node {
 
     const result = await this.llm.analyzeFile(
       prepRes,
-      toAnalyzeContent,
+      {
+        name: targetFileName,
+        content: toAnalyzeContent,
+      },
       relevantContexts
     );
 

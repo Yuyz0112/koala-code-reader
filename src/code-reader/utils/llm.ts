@@ -39,6 +39,7 @@ async function streamToText(
   const { textStream } = streamText({
     model,
     prompt,
+    temperature: 0.1,
   });
 
   for await (const textChunk of textStream) {
@@ -49,13 +50,13 @@ async function streamToText(
     const elapsed = Date.now() - startTime;
     const charsPerSecond = totalChars / (elapsed / 1000);
 
-    console.debug(
-      `[LLM] Chunk ${chunks}: +${
-        textChunk.length
-      } chars, total: ${totalChars} chars, speed: ${charsPerSecond.toFixed(
-        1
-      )} chars/s`
-    );
+    // console.debug(
+    //   `[LLM] Chunk ${chunks}: +${
+    //     textChunk.length
+    //   } chars, total: ${totalChars} chars, speed: ${charsPerSecond.toFixed(
+    //     1
+    //   )} chars/s`
+    // );
   }
 
   const totalTime = Date.now() - startTime;
@@ -106,14 +107,13 @@ export class LLM {
       SharedStorage,
       "basic" | "nextFile" | "currentFile" | "userFeedback"
     >,
-    toAnalyzeContent: string,
+    toAnalyze: {
+      name: string;
+      content: string;
+    },
     relevantContexts: string[] = [] // Add context parameter with default empty array
   ) {
-    const prompt = analyzeFilePrompt(
-      params,
-      toAnalyzeContent,
-      relevantContexts
-    );
+    const prompt = analyzeFilePrompt(params, toAnalyze, relevantContexts);
 
     try {
       const text = await streamToText(this.models.default, prompt);

@@ -92,13 +92,16 @@ flows.get("/:runId", async (c) => {
   try {
     const { runId } = c.req.param();
 
+    console.log("============> init KV");
     const kvStore = await createKVStore(c.env as CloudflareBindings);
 
+    console.log("============> get flow by id:", runId);
     const result = await FlowManager.getFlowById(kvStore, runId);
     if (!result.exists || !result.shared) {
       return c.json({ error: "Flow not found" }, 404);
     }
 
+    console.log("------------> start self-healing check for flow:", runId);
     // Self-healing: Check if flow needs resumption and queue it
     await FlowManager.checkAndQueueFlowResumption(
       kvStore,
@@ -106,6 +109,8 @@ flows.get("/:runId", async (c) => {
       runId,
       result.shared
     );
+
+    console.log("<------------ end self-healing check for flow:", runId);
 
     return c.json({
       runId,

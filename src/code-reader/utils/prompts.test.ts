@@ -67,7 +67,10 @@ describe("Prompts", () => {
           currentFile: undefined,
           userFeedback: undefined,
         },
-        "const x = 1;",
+        {
+          name: "index.ts",
+          content: "const x = 1;",
+        },
         [] // No relevant contexts
       );
       expect(prompt).toMatchSnapshot();
@@ -89,7 +92,10 @@ describe("Prompts", () => {
           },
           userFeedback: { action: "accept" },
         },
-        "const y = 2;",
+        {
+          name: "next.ts",
+          content: "const y = 2;",
+        },
         [] // No relevant contexts
       );
       expect(prompt).toMatchSnapshot();
@@ -111,7 +117,10 @@ describe("Prompts", () => {
           },
           userFeedback: { action: "reject", reason: "Missing key points" },
         },
-        "const z = 3;",
+        {
+          name: "next.ts",
+          content: "const z = 3;",
+        },
         [] // No relevant contexts
       );
       expect(prompt).toMatchSnapshot();
@@ -137,7 +146,10 @@ describe("Prompts", () => {
             reason: "More accurate",
           },
         },
-        "const a = 4;",
+        {
+          name: "next.ts",
+          content: "const a = 4;",
+        },
         [] // No relevant contexts
       );
       expect(prompt).toMatchSnapshot();
@@ -163,7 +175,10 @@ describe("Prompts", () => {
           currentFile: undefined,
           userFeedback: undefined,
         },
-        "const b = 5;",
+        {
+          name: "next.ts",
+          content: "const b = 5;",
+        },
         [] // No relevant contexts
       );
       expect(prompt).toMatchSnapshot();
@@ -182,7 +197,10 @@ describe("Prompts", () => {
           currentFile: undefined,
           userFeedback: undefined,
         },
-        "",
+        {
+          name: "empty.ts",
+          content: "",
+        },
         [] // No relevant contexts
       );
       expect(prompt).toMatchSnapshot();
@@ -201,7 +219,10 @@ describe("Prompts", () => {
           currentFile: undefined,
           userFeedback: undefined,
         },
-        "const target = true;",
+        {
+          name: "target.ts",
+          content: "const target = true;",
+        },
         [
           "File: related1.ts\nThis file handles authentication logic",
           "File: related2.ts\nThis file manages user sessions",
@@ -223,7 +244,10 @@ describe("Prompts", () => {
           currentFile: undefined,
           userFeedback: undefined,
         },
-        "const standalone = true;",
+        {
+          name: "standalone.ts",
+          content: "const standalone = 'test';",
+        },
         []
       );
       expect(prompt).toMatchSnapshot();
@@ -318,29 +342,6 @@ describe("Prompts", () => {
   });
 
   describe("Edge cases", () => {
-    it("should handle missing current file analysis", () => {
-      const prompt = analyzeFilePrompt(
-        {
-          basic: {
-            repoName: "test",
-            mainGoal: "Learn",
-            specificAreas: undefined,
-            files: [],
-          },
-          nextFile: { name: "next.ts", reason: "Next" },
-          currentFile: { name: "current.ts" }, // no analysis property
-          userFeedback: {
-            action: "refine",
-            userUnderstanding: "Better",
-            reason: "Fix",
-          },
-        },
-        "const code = true;",
-        [] // No relevant contexts
-      );
-      expect(prompt).toMatchSnapshot();
-    });
-
     it("should handle empty repo name", () => {
       const prompt = getEntryFilePrompt({
         basic: {

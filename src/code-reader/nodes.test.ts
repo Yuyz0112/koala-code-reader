@@ -405,7 +405,10 @@ describe("AnalyzeFileNode", () => {
       );
       expect(mockLLM.analyzeFile).toHaveBeenCalledWith(
         prepRes,
-        "file content",
+        {
+          name: "src/index.ts",
+          content: "file content",
+        },
         []
       );
       expect(result).toBeNull();

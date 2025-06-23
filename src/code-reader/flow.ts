@@ -52,6 +52,7 @@ export function createFlowNodes(
   // Configure node connections
   getEntryFileNode.on(Actions.DO_ANALYZE, analyzeFileNode);
   getEntryFileNode.on(Actions.IMPROVE_BASIC_INPUT, improveBasicInputNode);
+  getEntryFileNode.on(Actions.GET_ENTRY_FILE, getEntryFileNode);
 
   improveBasicInputNode.on(
     Actions.WAITING_FOR_BASIC_INPUT_IMPROVEMENT,

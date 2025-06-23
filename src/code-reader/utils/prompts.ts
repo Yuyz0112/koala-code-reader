@@ -25,18 +25,28 @@ ${generateFileStructureWithStatus(basic.files)}
 </AnalysisContext>
 
 <Task>
-Based on the provided context, determine the most logical entry file to start the code analysis. Consider:
+**CRITICAL CONSTRAINT**: You MUST select a file that exists in the provided file structure above. Do NOT create or suggest any file paths that are not explicitly listed in the file structure.
+${
+  basic.previousWrongPath
+    ? `Previous wrong path: ${basic.previousWrongPath}, DO NOT SELECT IT AGAIN.`
+    : ""
+}
 
-1. **Main Goal Alignment**: Which file would best serve the stated analysis goal?
-2. **Entry Points**: Look for typical entry points like:
+Based on the provided context, determine the most logical entry file to start the code analysis from the files that are available in the repository. Consider:
+
+1. **File Existence**: The selected file MUST be present in the file structure above
+2. **Main Goal Alignment**: Which available file would best serve the stated analysis goal?
+3. **Entry Points**: Look for typical entry points among the existing files:
    - Main application files (index.js, main.ts, app.ts, etc.)
    - Configuration files that reveal architecture
    - Key domain/business logic files
-   - Files mentioned in package.json scripts
-3. **Specific Areas**: If specific areas are mentioned, prioritize files related to those areas
-4. **Project Structure**: Consider the project type and common patterns
+   - Files that might be mentioned in package.json scripts
+4. **Specific Areas**: If specific areas are mentioned, prioritize existing files related to those areas
+5. **Project Structure**: Consider the project type and common patterns among available files
 
-If the current information is insufficient to make a confident decision, ask for clarification.
+**VALIDATION REQUIREMENT**: Before suggesting any file path, verify that the exact path exists in the file structure provided above.
+
+If the current information is insufficient to make a confident decision about which existing file to start with, ask for clarification.
 </Task>
 
 <OutputFormat>
@@ -46,8 +56,8 @@ If the current information is insufficient to make a confident decision, ask for
 \`\`\`yaml
 decision: entry_file_found
 next_file:
-  name: "path/to/file.ext"     # string - exact file path
-  reason: "Brief explanation"   # string - why this file is the best starting point
+  name: "path/to/file.ext"     # string - MUST be an exact file path from the file structure above
+  reason: "Brief explanation"   # string - why this existing file is the best starting point
 \`\`\`
 
 **If you need more information:**
@@ -56,6 +66,8 @@ decision: need_more_info
 ask_user: "Specific question about what additional information you need"  # string
 \`\`\`
 </OutputFormat>
+
+**REMINDER**: Only suggest file paths that are explicitly listed in the file structure above. Do not invent or assume any file paths.
 
 Analyze the codebase structure and provide your decision:`;
 
@@ -66,7 +78,10 @@ export const analyzeFilePrompt = (
     currentFile,
     userFeedback,
   }: Pick<SharedStorage, "basic" | "nextFile" | "currentFile" | "userFeedback">,
-  toAnalyzeContent: string,
+  toAnalyze: {
+    name: string;
+    content: string;
+  },
   relevantContexts: string[] = [] // Add context parameter with default empty array
 ) => {
   const allUnderstandings = getAnalyzedUnderstandings(basic.files);
@@ -176,11 +191,11 @@ ${analysisScenario}
 </CurrentScenario>
 
 ${
-  toAnalyzeContent
+  toAnalyze
     ? `<FileContent>
-File: ${nextFile?.name || currentFile?.name || "Unknown"}
+File: ${toAnalyze.name}
 \`\`\`
-${toAnalyzeContent}
+${toAnalyze.content}
 \`\`\`
 </FileContent>`
     : `<Note>File content will be loaded automatically for analysis</Note>`
