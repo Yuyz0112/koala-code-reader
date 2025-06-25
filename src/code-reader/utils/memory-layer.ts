@@ -117,6 +117,62 @@ export class MemoryLayer {
   }
 
   /**
+   * Perform semantic search in memory
+   */
+  async search(
+    query: string,
+    options: {
+      maxResults?: number;
+      minScore?: number;
+      excludeFile?: string;
+      sessionMetadata?: Record<string, any>;
+    } = {}
+  ): Promise<
+    {
+      filePath: string;
+      understanding: string;
+      score: number;
+      timestamp: number;
+    }[]
+  > {
+    const {
+      maxResults = 5,
+      minScore = 0.1,
+      excludeFile,
+      sessionMetadata = {},
+    } = options;
+
+    // Generate embedding for the query
+    const queryEmbedding = await this.embeddingProvider.embed(query);
+
+    // Search in vector store
+    const searchResults = await this.vectorStore.search(queryEmbedding, {
+      topK: maxResults * 2, // Get more to filter properly
+      where: sessionMetadata,
+    });
+
+    // Filter and format results
+    return searchResults
+      .filter((result) => {
+        // Filter by minimum score
+        if (result.score < minScore) return false;
+
+        // Filter out excluded file
+        if (excludeFile && result.metadata.filePath === excludeFile)
+          return false;
+
+        return true;
+      })
+      .slice(0, maxResults)
+      .map((result) => ({
+        filePath: result.metadata.filePath,
+        understanding: result.metadata.understanding,
+        score: result.score,
+        timestamp: result.metadata.timestamp,
+      }));
+  }
+
+  /**
    * Retrieve relevant context for analysis
    */
   async retrieve(
@@ -235,25 +291,17 @@ export class MemoryLayer {
     minScore: number,
     sessionMetadata: Record<string, any> = {}
   ): Promise<string[]> {
-    const queryEmbedding = await this.embeddingProvider.embed(queryContent);
-    const searchOptions: SearchOptions = {
-      topK: count * 2, // Get more to filter out excluded file
-      where: sessionMetadata, // Use session metadata for filtering (e.g., runId)
-    };
+    // Use the public search method for consistency
+    const searchResults = await this.search(queryContent, {
+      maxResults: count,
+      minScore: minScore,
+      excludeFile: excludeFile,
+      sessionMetadata: sessionMetadata,
+    });
 
-    const searchResults = await this.vectorStore.search(
-      queryEmbedding,
-      searchOptions
+    return searchResults.map(
+      (result) => `File: ${result.filePath}\n${result.understanding}`
     );
-
-    return searchResults
-      .filter((result) => result.metadata.filePath !== excludeFile)
-      .filter((result) => result.score > minScore) // Use configurable similarity threshold
-      .slice(0, count)
-      .map(
-        (result) =>
-          `File: ${result.metadata.filePath}\n${result.metadata.understanding}`
-      );
   }
 
   private deduplicateContexts(

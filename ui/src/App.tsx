@@ -100,10 +100,6 @@ function App() {
     const result = await loadFlow(runId);
     if (result.success) {
       setCurrentView("analysis");
-      toast({
-        title: "Flow Loaded",
-        description: `Flow has been loaded successfully.`,
-      });
     } else {
       toast({
         title: "Error",

@@ -1,4 +1,3 @@
-import { createOpenAI } from "@ai-sdk/openai";
 import {
   MemoryLayer,
   DEFAULT_MEMORY_CONFIG,
@@ -7,6 +6,7 @@ import {
   VectorStoreProvider,
   EmbeddingProvider,
 } from "../utils/memory-layer";
+import { ModelSet } from "../utils/llm";
 
 export class CloudflareVectorizeProvider implements VectorStoreProvider {
   private vectorize: VectorizeIndex;
@@ -88,17 +88,13 @@ export class CloudflareVectorizeProvider implements VectorStoreProvider {
 
 // Helper function to create memory layer with production providers
 export function createMemoryLayer(
+  models: ModelSet,
   environment: CloudflareBindings
 ): MemoryLayer {
-  const openai = createOpenAI({
-    apiKey: environment.OPENAI_API_KEY as string,
-    baseURL: `https://clear-robin-12.deno.dev/v1`,
-  });
-
   // Create providers
   const embeddingProvider: EmbeddingProvider = {
     async embed(text) {
-      const result = await openai.embedding("text-embedding-3-small").doEmbed({
+      const result = await models.embed.doEmbed({
         values: [text],
       });
       return result.embeddings[0];

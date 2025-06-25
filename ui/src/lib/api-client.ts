@@ -110,16 +110,35 @@ export class FlowAPIClient {
    * Get flow status by run ID
    */
   async getFlowStatus(runId: string): Promise<FlowAPIResponse> {
-    const response = await fetch(`${this.baseUrl}/api/flows/${runId}`);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      console.log("Request timed out after 3 seconds");
+      controller.abort();
+    }, 3000);
 
-    if (!response.ok) {
-      if (response.status === 404) {
-        throw new Error("Flow not found");
+    try {
+      const response = await fetch(
+        `${this.baseUrl}/api/flows/${runId}?t=${Date.now()}`,
+        { signal: controller.signal }
+      );
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Flow not found");
+        }
+        throw new Error(`HTTP ${response.status}`);
       }
-      throw new Error(`HTTP ${response.status}`);
-    }
 
-    return response.json();
+      return response.json();
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new Error("Request timeout after 3 seconds");
+      }
+      throw error;
+    }
   }
 
   /**

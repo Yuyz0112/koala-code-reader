@@ -44,7 +44,7 @@ export async function handleFlowQueue(
       const models = createModels(env);
 
       // Create memory layer with production providers
-      const memoryLayer = createMemoryLayer(env);
+      const memoryLayer = createMemoryLayer(models, env);
 
       // Add execution timeout protection
       const executionPromise = FlowManager.triggerFlow(

@@ -377,7 +377,9 @@ export const useFlowAPI = () => {
         setFlowStatus(data.shared || null);
 
         // Start polling if flow is not completed
-        if (data.shared && !data.shared.completed) {
+        const completed =
+          data.shared?.completed && Boolean(data.shared.reducedOutput);
+        if (data.shared && !completed) {
           startPolling(runId);
         }
 

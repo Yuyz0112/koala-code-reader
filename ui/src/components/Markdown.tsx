@@ -5,7 +5,7 @@ import rehypeHighlight from "rehype-highlight";
 import { cn } from "@/lib/utils";
 
 // Import GitHub Markdown CSS
-import "github-markdown-css/github-markdown.css";
+import "github-markdown-css/github-markdown-light.css";
 import "highlight.js/styles/github.css";
 
 interface MarkdownProps {

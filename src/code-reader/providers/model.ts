@@ -1,12 +1,20 @@
 import { createOpenAI } from "@ai-sdk/openai";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
 export function createModels(environment: CloudflareBindings) {
+  const openrouter = createOpenAI({
+    apiKey: environment.OPENROUTER_API_KEY,
+    baseURL: `https://openrouter.ai/api/v1`,
+  });
+
+  const qwen = createOpenAI({
+    apiKey: environment.DASHSCOPE_API_KEY,
+    baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+  });
+
   const models = {
-    default: createOpenAI({
-      apiKey: environment.OPENAI_API_KEY as string,
-      baseURL: `https://clear-robin-12.deno.dev/v1`,
-    })("gpt-4o"),
+    default: openrouter("google/gemini-2.5-flash"),
+    agent: openrouter("google/gemini-2.5-flash"),
+    embed: qwen.embedding("text-embedding-v4"),
   };
 
   return models;

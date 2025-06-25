@@ -162,6 +162,10 @@ export class AnalyzeFileNode extends Node {
       "basic" | "nextFile" | "currentFile" | "userFeedback"
     >
   ): string | null {
+    if (prepRes.basic.files.every((f) => f.status !== "pending")) {
+      return null;
+    }
+
     if (prepRes.userFeedback?.action === "reject") {
       // User rejected current analysis, re-analyze the same file with reject reason
       const currentFileName = prepRes.currentFile?.name;
@@ -197,7 +201,7 @@ export class AnalyzeFileNode extends Node {
   ): { error?: string } {
     const targetFile = files.find((file) => file.path === fileName);
 
-    if (!targetFile) {
+    if (!allowReanalyze && !targetFile) {
       return {
         error: "File not found in available files, requesting regeneration",
       };
@@ -205,7 +209,7 @@ export class AnalyzeFileNode extends Node {
 
     if (
       !allowReanalyze &&
-      targetFile.status === "done" &&
+      targetFile?.status === "done" &&
       targetFile.understanding
     ) {
       return {
@@ -507,19 +511,23 @@ export class ReduceHistoryNode extends Node {
       );
     }
 
-    // Step 3: Use AgenticWriter to generate final output based on memory
-    console.log(
-      `[${this.runId}] ReduceHistoryNode.exec: Starting AgenticWriter for final output generation`
-    );
-    const { final_output } = await this.llm.agenticWriter({
-      basic: { ...prepRes.basic, files: updatedFiles },
-      reducedOutput: prepRes.reducedOutput,
-      memoryLayer: this.memoryLayer,
-      completed: prepRes.completed,
-    });
-    console.log(
-      `[${this.runId}] ReduceHistoryNode.exec: AgenticWriter completed`
-    );
+    let final_output = prepRes.reducedOutput || "";
+
+    if (prepRes.completed) {
+      // Step 3: Use AgenticWriter to generate final output based on memory
+      console.log(
+        `[${this.runId}] ReduceHistoryNode.exec: Starting AgenticWriter for final output generation`
+      );
+      const result = await this.llm.agenticWriter({
+        basic: { ...prepRes.basic, files: updatedFiles },
+        memoryLayer: this.memoryLayer,
+        completed: prepRes.completed,
+      });
+      final_output = result.final_output;
+      console.log(
+        `[${this.runId}] ReduceHistoryNode.exec: AgenticWriter completed`
+      );
+    }
 
     return {
       reducedOutput: final_output,

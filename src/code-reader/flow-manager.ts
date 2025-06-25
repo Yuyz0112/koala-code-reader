@@ -509,8 +509,9 @@ export class FlowManager {
     shared: SharedStorage
   ): Promise<void> {
     try {
+      const completed = shared.completed && Boolean(shared.reducedOutput);
       // Only queue resumption if flow is not completed and not waiting for user input
-      if (!shared.completed && !shared.callToAction) {
+      if (!completed && !shared.callToAction) {
         // Use the abstracted heartbeat detection logic
         if (this.isHeartbeatExpired(shared)) {
           const timeSinceLastHeartbeat =
