@@ -20,10 +20,11 @@ const MAX_RETRIES = 3;
 // Create and configure the flow nodes
 export function createFlowNodes(
   models: ModelSet,
+  githubToken: string,
   memoryLayer: MemoryLayer,
   runId: string
 ) {
-  const llm = new LLM(models);
+  const llm = new LLM(models, githubToken);
 
   const getEntryFileNode = new GetEntryFileNode(llm, runId, MAX_RETRIES);
   const improveBasicInputNode = new ImproveBasicInputNode(runId, MAX_RETRIES);
@@ -31,6 +32,7 @@ export function createFlowNodes(
     new WaitingForBasicInputImprovementNode(runId, MAX_RETRIES);
   const analyzeFileNode = new AnalyzeFileNode(
     llm,
+    githubToken,
     readFileFromStorage,
     memoryLayer,
     runId,
@@ -85,12 +87,18 @@ export function createFlowNodes(
 export function createPersistedFlow(
   kvStore: KVStore,
   models: ModelSet,
+  githubToken: string,
   memoryLayer: MemoryLayer,
   runId?: string
 ): PersistedFlow<SharedStorage> {
   const flowRunId =
     runId || `flow-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  const startNode = createFlowNodes(models, memoryLayer, flowRunId);
+  const startNode = createFlowNodes(
+    models,
+    githubToken,
+    memoryLayer,
+    flowRunId
+  );
   return new PersistedFlow<SharedStorage>(startNode, kvStore, flowRunId);
 }
 

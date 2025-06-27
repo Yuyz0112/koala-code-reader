@@ -126,9 +126,11 @@ export type ModelSet = {
 
 export class LLM {
   models: ModelSet;
+  githubToken: string;
 
-  constructor(models: ModelSet) {
+  constructor(models: ModelSet, githubToken: string) {
     this.models = models;
+    this.githubToken = githubToken;
   }
 
   async getEntryFile(params: Pick<SharedStorage, "basic">) {
@@ -205,7 +207,6 @@ export class LLM {
     params: Pick<SharedStorage, "basic"> & {
       memoryLayer: MemoryLayer;
       completed: boolean;
-      env?: any;
     }
   ) {
     console.log(
@@ -218,7 +219,7 @@ export class LLM {
     const tools = createAgenticWriterTools(
       params.memoryLayer,
       params.basic,
-      params.env
+      this.githubToken
     );
 
     const prompt = agenticWriterPrompt({

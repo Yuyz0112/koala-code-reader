@@ -85,7 +85,7 @@ export class PersistedFlow<
     start: BaseNode<any, any>
   ): Promise<PersistedFlow<S>> {
     const flow = await kv.read<FlowRecord>(`flow:${runId}`);
-    if (!flow) throw new Error("flow not found");
+    if (!flow) throw new Error(`flow "${runId}" not found`);
     const pf = new PersistedFlow<S>(start, kv, runId);
     pf.setParams(flow.params);
     return pf;

@@ -42,6 +42,7 @@ export async function handleFlowQueue(
       // Create required dependencies
       const kvStore = await createKVStore(env);
       const models = createModels(env);
+      const githubToken = env.GITHUB_TOKEN;
 
       // Create memory layer with production providers
       const memoryLayer = createMemoryLayer(models, env);
@@ -50,6 +51,7 @@ export async function handleFlowQueue(
       const executionPromise = FlowManager.triggerFlow(
         kvStore,
         models,
+        githubToken,
         memoryLayer,
         runId
       );

@@ -118,18 +118,22 @@ export class ImproveBasicInputNode extends Node {
 
 export class AnalyzeFileNode extends Node {
   llm: LLM;
+  githubToken: string;
   readFileFromStorage: (
     filePath: string,
-    storage: { basic: SharedStorage["basic"] }
+    storage: { basic: SharedStorage["basic"] },
+    githubToken: string
   ) => Promise<string>;
   memoryLayer: MemoryLayer; // Required memory layer for context retrieval
   runId: string;
 
   constructor(
     llm: LLM,
+    githubToken: string,
     readFileFromStorage: (
       filePath: string,
-      storage: { basic: SharedStorage["basic"] }
+      storage: { basic: SharedStorage["basic"] },
+      githubToken: string
     ) => Promise<string>,
     memoryLayer: MemoryLayer, // Required parameter before runId
     runId: string,
@@ -137,6 +141,7 @@ export class AnalyzeFileNode extends Node {
   ) {
     super(maxRetries);
     this.llm = llm;
+    this.githubToken = githubToken;
     this.readFileFromStorage = readFileFromStorage;
     this.memoryLayer = memoryLayer;
     this.runId = runId;
@@ -163,6 +168,14 @@ export class AnalyzeFileNode extends Node {
     >
   ): string | null {
     if (prepRes.basic.files.every((f) => f.status !== "pending")) {
+      return null;
+    }
+
+    if (prepRes.userFeedback?.action === "finish") {
+      // User wants to finish analysis early, stop processing more files
+      console.log(
+        `[${this.runId}] AnalyzeFileNode: User requested to finish analysis early`
+      );
       return null;
     }
 
@@ -231,7 +244,8 @@ export class AnalyzeFileNode extends Node {
 
     const toAnalyzeContent = await this.readFileFromStorage(
       targetFileName,
-      prepRes
+      prepRes,
+      this.githubToken
     );
 
     console.log(
@@ -455,10 +469,17 @@ export class ReduceHistoryNode extends Node {
       console.log(
         `[${this.runId}] ReduceHistoryNode.exec: Using refine understanding from user feedback`
       );
-    } else if (prepRes.userFeedback?.action === "accept") {
+    } else if (
+      prepRes.userFeedback?.action === "accept" ||
+      prepRes.userFeedback?.action === "finish"
+    ) {
       currentUnderstanding = prepRes.currentFile?.analysis?.understanding || "";
       console.log(
-        `[${this.runId}] ReduceHistoryNode.exec: Using accepted understanding from analysis`
+        `[${this.runId}] ReduceHistoryNode.exec: Using ${
+          prepRes.userFeedback.action === "finish"
+            ? "accepted understanding and finishing"
+            : "accepted understanding"
+        } from analysis`
       );
     } else {
       throw new Error(
@@ -513,15 +534,21 @@ export class ReduceHistoryNode extends Node {
 
     let final_output = prepRes.reducedOutput || "";
 
-    if (prepRes.completed) {
+    if (prepRes.completed || prepRes.userFeedback?.action === "finish") {
       // Step 3: Use AgenticWriter to generate final output based on memory
       console.log(
-        `[${this.runId}] ReduceHistoryNode.exec: Starting AgenticWriter for final output generation`
+        `[${
+          this.runId
+        }] ReduceHistoryNode.exec: Starting AgenticWriter for final output generation${
+          prepRes.userFeedback?.action === "finish"
+            ? " (user requested finish)"
+            : ""
+        }`
       );
       const result = await this.llm.agenticWriter({
         basic: { ...prepRes.basic, files: updatedFiles },
         memoryLayer: this.memoryLayer,
-        completed: prepRes.completed,
+        completed: true,
       });
       final_output = result.final_output;
       console.log(
@@ -544,6 +571,12 @@ export class ReduceHistoryNode extends Node {
   ): Promise<string | undefined> {
     shared.reducedOutput = execRes.reducedOutput;
     shared.basic.files = execRes.updatedFiles;
+
+    // Check if user requested to finish early
+    if (shared.userFeedback?.action === "finish") {
+      shared.completed = true;
+      return Actions.ALL_FILES_ANALYZED;
+    }
 
     if (shared.completed) {
       return Actions.ALL_FILES_ANALYZED;
@@ -615,6 +648,10 @@ export class WaitingForUserFeedbackNode extends Node {
     // Determine next flow step based on feedback type
     if (shared.userFeedback?.action === "reject") {
       return Actions.DO_ANALYZE;
+    }
+
+    if (shared.userFeedback?.action === "finish") {
+      return Actions.DO_REDUCE;
     }
 
     return Actions.DO_REDUCE;

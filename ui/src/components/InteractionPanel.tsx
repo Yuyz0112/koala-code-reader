@@ -52,13 +52,22 @@ export function InteractionPanel({
     }
   };
 
-  const handleFeedbackAction = (action: "accept" | "reject" | "refine") => {
+  const handleFeedbackAction = (
+    action: "accept" | "reject" | "refine" | "finish"
+  ) => {
     if (action === "accept") {
       // For accept, send the feedback directly without requiring additional input
       onSendResponse({
         type: "user_feedback",
         action: "accept",
         reason: "User approved the analysis",
+        originalData: requestData,
+      });
+    } else if (action === "finish") {
+      // For finish, send the feedback directly to complete analysis early
+      onSendResponse({
+        type: "user_feedback",
+        action: "finish",
         originalData: requestData,
       });
     } else {
@@ -298,7 +307,8 @@ export function InteractionPanel({
 
                 <div className="flex gap-2">
                   <Button type="submit" disabled={disabled || !response.trim()}>
-                    Submit {feedbackMode === "reject" ? "Rejection" : "Refinement"}
+                    Submit{" "}
+                    {feedbackMode === "reject" ? "Rejection" : "Refinement"}
                   </Button>
                   <Button
                     type="button"
@@ -340,7 +350,9 @@ export function InteractionPanel({
             {requestData?.message && (
               <div className="mb-4 p-3 bg-white rounded-md border">
                 <p className="text-sm font-medium text-gray-700">
-                  {requestType === "user_feedback" ? "AI Analysis:" : "AI Message:"}
+                  {requestType === "user_feedback"
+                    ? "AI Analysis:"
+                    : "AI Message:"}
                 </p>
                 <Markdown className="text-sm text-gray-600 mt-1">
                   {requestData.message}
@@ -365,17 +377,6 @@ export function InteractionPanel({
                 <p className="text-sm text-blue-600 mt-1">
                   {requestData.suggestion}
                 </p>
-              </div>
-            )}
-
-            {requestData?.results && (
-              <div className="mb-4 p-3 bg-green-50 rounded-md border border-green-200">
-                <p className="text-sm font-medium text-green-700">
-                  Analysis Results:
-                </p>
-                <pre className="text-xs text-green-600 mt-1 whitespace-pre-wrap">
-                  {JSON.stringify(requestData.results, null, 2)}
-                </pre>
               </div>
             )}
 
@@ -424,6 +425,20 @@ export function InteractionPanel({
                       (Analysis is incorrect)
                     </span>
                   </Button>
+
+                  <div className="border-t pt-3 mt-2">
+                    <Button
+                      onClick={() => handleFeedbackAction("finish")}
+                      disabled={disabled}
+                      variant="outline"
+                      className="w-full border-purple-500 text-purple-700 hover:bg-purple-50"
+                    >
+                      🏁 Finish Analysis
+                      <span className="text-xs ml-2 opacity-80">
+                        (Generate summary now)
+                      </span>
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}

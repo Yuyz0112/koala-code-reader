@@ -53,6 +53,9 @@ flows.post("/", async (c) => {
     // Initialize models
     const models = createModels(c.env as CloudflareBindings);
 
+    // Get GitHub token from environment
+    const githubToken = (c.env as CloudflareBindings).GITHUB_TOKEN;
+
     // Create memory layer
     const memoryLayer = createMemoryLayer(models, c.env as CloudflareBindings);
 
@@ -62,6 +65,7 @@ flows.post("/", async (c) => {
     const result = await FlowManager.initializeFlow(
       kvStore,
       models,
+      githubToken,
       memoryLayer,
       flowRunId,
       shared
@@ -134,6 +138,7 @@ flows.post("/:runId/input", async (c) => {
 
     const kvStore = await createKVStore(c.env as CloudflareBindings);
     const models = createModels(c.env as CloudflareBindings);
+    const githubToken = (c.env as CloudflareBindings).GITHUB_TOKEN;
 
     // Create memory layer
     const memoryLayer = createMemoryLayer(models, c.env as CloudflareBindings);
@@ -142,6 +147,7 @@ flows.post("/:runId/input", async (c) => {
     const result = await FlowManager.handleUserInput(
       kvStore,
       models,
+      githubToken,
       memoryLayer,
       (c.env as CloudflareBindings).FLOW_QUEUE,
       runId,

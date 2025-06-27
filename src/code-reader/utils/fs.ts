@@ -94,7 +94,7 @@ export async function readFromGithub(
   repoUrl: string,
   filePath: string,
   ref: string = "main",
-  githubToken?: string
+  githubToken: string
 ): Promise<string> {
   try {
     // Parse and clean the GitHub URL to remove search parameters
@@ -175,7 +175,7 @@ export async function readFromGithub(
 export async function readFileFromStorage(
   filePath: string,
   storage: { basic: SharedStorage["basic"] },
-  githubToken?: string
+  githubToken: string
 ): Promise<string> {
   const githubUrl = storage.basic.githubUrl;
   const githubRef = storage.basic.githubRef || "main";
@@ -203,7 +203,7 @@ export async function searchFilesInGithub(
   query: string,
   options: SearchOptions = {},
   ref: string = "main",
-  githubToken?: string
+  githubToken: string
 ): Promise<FileSearchResult[]> {
   try {
     // Parse and clean the GitHub URL
@@ -264,7 +264,7 @@ async function searchInFileNames(
   query: string,
   ref: string,
   options: SearchOptions,
-  githubToken?: string
+  githubToken: string
 ): Promise<FileSearchResult[]> {
   const { extension, maxResults = 100, includeContent = false } = options;
 
@@ -354,7 +354,7 @@ async function searchInFileContent(
   repo: string,
   query: string,
   options: SearchOptions,
-  githubToken?: string
+  githubToken: string
 ): Promise<FileSearchResult[]> {
   const { extension, maxResults = 100, includeContent = false } = options;
 
@@ -476,7 +476,7 @@ export async function getDirectoryStructure(
   repoUrl: string,
   path: string = "",
   ref: string = "main",
-  githubToken?: string
+  githubToken: string
 ): Promise<FileSearchResult[]> {
   try {
     // Parse GitHub repository URL
@@ -553,15 +553,6 @@ export async function getDirectoryStructure(
   }
 }
 
-// Helper functions for working with Cloudflare environment
-
-/**
- * Extract GitHub token from Cloudflare environment
- */
-function getGithubToken(env?: any): string | undefined {
-  return env?.GITHUB_TOKEN;
-}
-
 /**
  * Read file from GitHub with automatic token extraction from environment
  */
@@ -569,9 +560,8 @@ export async function readFromGithubWithEnv(
   repoUrl: string,
   filePath: string,
   ref: string = "main",
-  env?: any
+  githubToken: string
 ): Promise<string> {
-  const githubToken = getGithubToken(env);
   return readFromGithub(repoUrl, filePath, ref, githubToken);
 }
 
@@ -581,9 +571,8 @@ export async function readFromGithubWithEnv(
 export async function readFileFromStorageWithEnv(
   filePath: string,
   storage: { basic: SharedStorage["basic"] },
-  env?: any
+  githubToken: string
 ): Promise<string> {
-  const githubToken = getGithubToken(env);
   return readFileFromStorage(filePath, storage, githubToken);
 }
 
@@ -595,9 +584,8 @@ export async function searchFilesInGithubWithEnv(
   query: string,
   options: SearchOptions = {},
   ref: string = "main",
-  env?: any
+  githubToken: string
 ): Promise<FileSearchResult[]> {
-  const githubToken = getGithubToken(env);
   return searchFilesInGithub(repoUrl, query, options, ref, githubToken);
 }
 
@@ -608,8 +596,7 @@ export async function getDirectoryStructureWithEnv(
   repoUrl: string,
   path: string = "",
   ref: string = "main",
-  env?: any
+  githubToken: string
 ): Promise<FileSearchResult[]> {
-  const githubToken = getGithubToken(env);
   return getDirectoryStructure(repoUrl, path, ref, githubToken);
 }

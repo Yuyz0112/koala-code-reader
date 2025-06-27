@@ -64,13 +64,11 @@ Repository: test
 Main Goal: Learn
 
 
-File Structure:
+AVAILABLE FILES FOR NEXT ANALYSIS (PENDING FILES ONLY):
 No files available
-</AnalysisContext>
 
-<AnalysisHistory>
-This is the beginning of the analysis - no files have been analyzed yet.
-</AnalysisHistory>
+**CRITICAL**: Your next file selection MUST be from the list above. Only files marked "○ [FILE] ... (PENDING)" can be selected.
+</AnalysisContext>
 
 
 
@@ -88,23 +86,54 @@ const x = 1;
 
 <Instructions>
 1. **Analyze the file content** thoroughly to understand its purpose, key functionality, and role
-2. **Provide your analysis and understanding** of what this file does and why it's important
-3. **Propose the next logical file** to analyze based on your understanding
+2. **Focus on what you can understand from this file alone** - don't worry about incomplete understanding due to external dependencies
+3. **Record any dependencies or references** to other files/components that would need further investigation
+4. **Provide your analysis and understanding** of what this file does and why it's important
+5. **Propose the next logical file** to analyze - MUST choose from "AVAILABLE FILES FOR NEXT ANALYSIS" section above
 
 **CRITICAL ANALYSIS PRINCIPLES**:
 
-1. **HIGH-CONFIDENCE SELECTION ONLY**: Only propose to read a file if you have HIGH CONFIDENCE (>80%) that it is directly relevant to the current user task and main goal. Do not propose files for exploratory purposes or "just to see what's there."
+1. **NEXT FILE MUST BE FROM PENDING LIST**: Your next_filename MUST be exactly one of the files marked "○ [FILE] ... (PENDING)" from "AVAILABLE FILES FOR NEXT ANALYSIS" section.
 
-2. **NO REDUNDANT READING**: Never propose to re-read files that are already listed in the Analysis History. Those files have been completely analyzed and their understanding is already captured in the summaries above.
+2. **FOCUS ON CURRENT FILE**: Analyze the current file's content thoroughly, even if some parts depend on other files. Record dependencies and incomplete understanding in your analysis - the final writer will cross-reference multiple files to complete the picture.
 
-3. **TARGETED ANALYSIS**: Before proposing the next file, clearly articulate why that specific file is essential for understanding the main goal. Avoid generic reasoning like "to understand the project better" - be specific about what gap in understanding this file will fill.
+3. **RECORD DEPENDENCIES**: When you encounter references to other files, interfaces, or components not fully defined in the current file, note them in your analysis rather than trying to resolve them immediately.
 
-4. **EFFICIENCY OVER COMPLETENESS**: It's better to analyze fewer, highly relevant files thoroughly than to read many files with marginal relevance. Focus on the files that are most critical to achieving the main goal.
+4. **HIGH-CONFIDENCE SELECTION ONLY**: Only propose to read a file if you have HIGH CONFIDENCE (>80%) that it is directly relevant to the current user task and main goal.
+
+5. **NO REDUNDANT READING**: Never propose files that appear in BackgroundContext - those are already analyzed.
+
+6. **TARGETED ANALYSIS**: Be specific about what gap in understanding the chosen file will fill.
+
+7. **EFFICIENCY OVER COMPLETENESS**: Focus on files most critical to achieving the main goal.
+
+<Instructions>
+1. **Analyze the file content** thoroughly to understand its purpose, key functionality, and role
+2. **Focus on what you can understand from this file alone** - don't worry about incomplete understanding due to external dependencies
+3. **Record any dependencies or references** to other files/components that would need further investigation
+4. **Provide your analysis and understanding** of what this file does and why it's important
+5. **Propose the next logical file** to analyze - MUST choose from "AVAILABLE FILES FOR NEXT ANALYSIS" section above
+
+**ANALYSIS FOCUS GUIDELINES**:
+
+- **Current File Priority**: Your primary focus should be understanding what the current file implements, defines, and contributes to the system
+- **Dependencies as Notes**: When you encounter imports, interfaces, or references to other files, record them as dependencies rather than trying to fully understand them
+- **Incomplete Understanding is OK**: It's acceptable to have partial understanding due to external dependencies - note these gaps in your analysis
+- **Final Assembly**: Remember that the final writer will have access to all analyzed files and can cross-reference to complete the understanding
+- **Avoid Speculation**: Don't guess about external implementations - focus on what you can directly observe in the current file
 
 Focus on understanding the codebase incrementally, but only when there's clear justification for reading additional files.
 
 **Important**: Consider the analysis history and main goal to determine if you have sufficient understanding. If you believe you have analyzed enough files to achieve the main goal and understand the key aspects of the codebase, you should complete the analysis rather than continuing indefinitely.
 </Instructions>
+
+<FileSelectionRule>
+**MANDATORY**: Your next_filename MUST be exactly one file from "AVAILABLE FILES FOR NEXT ANALYSIS" section above.
+
+**EXAMPLE**:
+- If you see "○ [FILE] embedder.go (PENDING)" → You CAN select "embedder.go"
+- If a file is in BackgroundContext → You CANNOT select it (already analyzed)
+</FileSelectionRule>
 
 <OutputFormat>
 **Every response MUST consist solely of valid YAML that conforms exactly to the schema below—no extra text, explanations, or comments.**
@@ -113,13 +142,13 @@ Focus on understanding the codebase incrementally, but only when there's clear j
 \`\`\`yaml
 current_analysis:
   filename: "current/file/path.ext"        # string - file being analyzed
-  understanding: "Analysis and insights based on main goal"      # string - purpose, functionality, notable points
+  understanding: "Analysis and insights based on main goal. Include what this file implements, its role in the system, key functionality, and any dependencies or external references that would need further investigation."      # string - purpose, functionality, notable points, dependencies
 next_focus_proposal:
-  next_filename: "next/file/path.ext"      # string - exactly ONE file to analyze next
+  next_filename: "file.ext"                # string - MUST be exactly ONE file from "AVAILABLE FILES FOR NEXT ANALYSIS" list
   reason: "Why this is the logical next step"  # string - reasoning for next file choice
 \`\`\`
 
-**If analysis is complete:**
+**If no pending files listed, it means analysis is complete:**
 \`\`\`yaml
 analysis_complete: true
 final_understanding: "Overall comprehensive understanding"  # string - synthesis of all analyzed files
@@ -141,13 +170,11 @@ Repository: test
 Main Goal: Learn
 
 
-File Structure:
+AVAILABLE FILES FOR NEXT ANALYSIS (PENDING FILES ONLY):
 No files available
-</AnalysisContext>
 
-<AnalysisHistory>
-This is the beginning of the analysis - no files have been analyzed yet.
-</AnalysisHistory>
+**CRITICAL**: Your next file selection MUST be from the list above. Only files marked "○ [FILE] ... (PENDING)" can be selected.
+</AnalysisContext>
 
 
 
@@ -165,23 +192,52 @@ const y = 2;
 
 <Instructions>
 1. **Analyze the new file content** thoroughly
-2. **Build upon the accepted previous analysis** to maintain continuity
-3. **Propose the next logical file** to analyze
+2. **Focus on understanding this specific file's role and implementation** - note any dependencies without trying to resolve them immediately
+3. **Build upon the accepted previous analysis** to maintain continuity
+4. **Propose the next logical file** to analyze - MUST choose from "AVAILABLE FILES FOR NEXT ANALYSIS" section above
 
 **CRITICAL ANALYSIS PRINCIPLES**:
 
-1. **HIGH-CONFIDENCE SELECTION ONLY**: Only propose to read a file if you have HIGH CONFIDENCE (>80%) that it is directly relevant to the current user task and main goal. Do not propose files for exploratory purposes or "just to see what's there."
+1. **NEXT FILE MUST BE FROM PENDING LIST**: Your next_filename MUST be exactly one of the files marked "○ [FILE] ... (PENDING)" from "AVAILABLE FILES FOR NEXT ANALYSIS" section.
 
-2. **NO REDUNDANT READING**: Never propose to re-read files that are already listed in the Analysis History. Those files have been completely analyzed and their understanding is already captured in the summaries above.
+2. **FOCUS ON CURRENT FILE**: Analyze the current file's content thoroughly, even if some parts depend on other files. Record dependencies and incomplete understanding in your analysis - the final writer will cross-reference multiple files to complete the picture.
 
-3. **TARGETED ANALYSIS**: Before proposing the next file, clearly articulate why that specific file is essential for understanding the main goal. Avoid generic reasoning like "to understand the project better" - be specific about what gap in understanding this file will fill.
+3. **RECORD DEPENDENCIES**: When you encounter references to other files, interfaces, or components not fully defined in the current file, note them in your analysis rather than trying to resolve them immediately.
 
-4. **EFFICIENCY OVER COMPLETENESS**: It's better to analyze fewer, highly relevant files thoroughly than to read many files with marginal relevance. Focus on the files that are most critical to achieving the main goal.
+4. **HIGH-CONFIDENCE SELECTION ONLY**: Only propose to read a file if you have HIGH CONFIDENCE (>80%) that it is directly relevant to the current user task and main goal.
+
+5. **NO REDUNDANT READING**: Never propose files that appear in BackgroundContext - those are already analyzed.
+
+6. **TARGETED ANALYSIS**: Be specific about what gap in understanding the chosen file will fill.
+
+7. **EFFICIENCY OVER COMPLETENESS**: Focus on files most critical to achieving the main goal.
+
+<Instructions>
+1. **Analyze the new file content** thoroughly
+2. **Focus on understanding this specific file's role and implementation** - note any dependencies without trying to resolve them immediately
+3. **Build upon the accepted previous analysis** to maintain continuity
+4. **Propose the next logical file** to analyze - MUST choose from "AVAILABLE FILES FOR NEXT ANALYSIS" section above
+
+**ANALYSIS FOCUS GUIDELINES**:
+
+- **Current File Priority**: Your primary focus should be understanding what the current file implements, defines, and contributes to the system
+- **Dependencies as Notes**: When you encounter imports, interfaces, or references to other files, record them as dependencies rather than trying to fully understand them
+- **Incomplete Understanding is OK**: It's acceptable to have partial understanding due to external dependencies - note these gaps in your analysis
+- **Final Assembly**: Remember that the final writer will have access to all analyzed files and can cross-reference to complete the understanding
+- **Avoid Speculation**: Don't guess about external implementations - focus on what you can directly observe in the current file
 
 Focus on understanding the codebase incrementally, but only when there's clear justification for reading additional files.
 
 **Important**: Consider the analysis history and main goal to determine if you have sufficient understanding. If you believe you have analyzed enough files to achieve the main goal and understand the key aspects of the codebase, you should complete the analysis rather than continuing indefinitely.
 </Instructions>
+
+<FileSelectionRule>
+**MANDATORY**: Your next_filename MUST be exactly one file from "AVAILABLE FILES FOR NEXT ANALYSIS" section above.
+
+**EXAMPLE**:
+- If you see "○ [FILE] embedder.go (PENDING)" → You CAN select "embedder.go"
+- If a file is in BackgroundContext → You CANNOT select it (already analyzed)
+</FileSelectionRule>
 
 <OutputFormat>
 **Every response MUST consist solely of valid YAML that conforms exactly to the schema below—no extra text, explanations, or comments.**
@@ -190,13 +246,13 @@ Focus on understanding the codebase incrementally, but only when there's clear j
 \`\`\`yaml
 current_analysis:
   filename: "current/file/path.ext"        # string - file being analyzed
-  understanding: "Analysis and insights based on main goal"      # string - purpose, functionality, notable points
+  understanding: "Analysis and insights based on main goal. Include what this file implements, its role in the system, key functionality, and any dependencies or external references that would need further investigation."      # string - purpose, functionality, notable points, dependencies
 next_focus_proposal:
-  next_filename: "next/file/path.ext"      # string - exactly ONE file to analyze next
+  next_filename: "file.ext"                # string - MUST be exactly ONE file from "AVAILABLE FILES FOR NEXT ANALYSIS" list
   reason: "Why this is the logical next step"  # string - reasoning for next file choice
 \`\`\`
 
-**If analysis is complete:**
+**If no pending files listed, it means analysis is complete:**
 \`\`\`yaml
 analysis_complete: true
 final_understanding: "Overall comprehensive understanding"  # string - synthesis of all analyzed files
@@ -218,13 +274,11 @@ Repository: test
 Main Goal: Learn
 
 
-File Structure:
+AVAILABLE FILES FOR NEXT ANALYSIS (PENDING FILES ONLY):
 No files available
-</AnalysisContext>
 
-<AnalysisHistory>
-This is the beginning of the analysis - no files have been analyzed yet.
-</AnalysisHistory>
+**CRITICAL**: Your next file selection MUST be from the list above. Only files marked "○ [FILE] ... (PENDING)" can be selected.
+</AnalysisContext>
 
 
 
@@ -242,23 +296,54 @@ File: empty.ts
 
 <Instructions>
 1. **Analyze the file content** thoroughly to understand its purpose, key functionality, and role
-2. **Provide your analysis and understanding** of what this file does and why it's important
-3. **Propose the next logical file** to analyze based on your understanding
+2. **Focus on what you can understand from this file alone** - don't worry about incomplete understanding due to external dependencies
+3. **Record any dependencies or references** to other files/components that would need further investigation
+4. **Provide your analysis and understanding** of what this file does and why it's important
+5. **Propose the next logical file** to analyze - MUST choose from "AVAILABLE FILES FOR NEXT ANALYSIS" section above
 
 **CRITICAL ANALYSIS PRINCIPLES**:
 
-1. **HIGH-CONFIDENCE SELECTION ONLY**: Only propose to read a file if you have HIGH CONFIDENCE (>80%) that it is directly relevant to the current user task and main goal. Do not propose files for exploratory purposes or "just to see what's there."
+1. **NEXT FILE MUST BE FROM PENDING LIST**: Your next_filename MUST be exactly one of the files marked "○ [FILE] ... (PENDING)" from "AVAILABLE FILES FOR NEXT ANALYSIS" section.
 
-2. **NO REDUNDANT READING**: Never propose to re-read files that are already listed in the Analysis History. Those files have been completely analyzed and their understanding is already captured in the summaries above.
+2. **FOCUS ON CURRENT FILE**: Analyze the current file's content thoroughly, even if some parts depend on other files. Record dependencies and incomplete understanding in your analysis - the final writer will cross-reference multiple files to complete the picture.
 
-3. **TARGETED ANALYSIS**: Before proposing the next file, clearly articulate why that specific file is essential for understanding the main goal. Avoid generic reasoning like "to understand the project better" - be specific about what gap in understanding this file will fill.
+3. **RECORD DEPENDENCIES**: When you encounter references to other files, interfaces, or components not fully defined in the current file, note them in your analysis rather than trying to resolve them immediately.
 
-4. **EFFICIENCY OVER COMPLETENESS**: It's better to analyze fewer, highly relevant files thoroughly than to read many files with marginal relevance. Focus on the files that are most critical to achieving the main goal.
+4. **HIGH-CONFIDENCE SELECTION ONLY**: Only propose to read a file if you have HIGH CONFIDENCE (>80%) that it is directly relevant to the current user task and main goal.
+
+5. **NO REDUNDANT READING**: Never propose files that appear in BackgroundContext - those are already analyzed.
+
+6. **TARGETED ANALYSIS**: Be specific about what gap in understanding the chosen file will fill.
+
+7. **EFFICIENCY OVER COMPLETENESS**: Focus on files most critical to achieving the main goal.
+
+<Instructions>
+1. **Analyze the file content** thoroughly to understand its purpose, key functionality, and role
+2. **Focus on what you can understand from this file alone** - don't worry about incomplete understanding due to external dependencies
+3. **Record any dependencies or references** to other files/components that would need further investigation
+4. **Provide your analysis and understanding** of what this file does and why it's important
+5. **Propose the next logical file** to analyze - MUST choose from "AVAILABLE FILES FOR NEXT ANALYSIS" section above
+
+**ANALYSIS FOCUS GUIDELINES**:
+
+- **Current File Priority**: Your primary focus should be understanding what the current file implements, defines, and contributes to the system
+- **Dependencies as Notes**: When you encounter imports, interfaces, or references to other files, record them as dependencies rather than trying to fully understand them
+- **Incomplete Understanding is OK**: It's acceptable to have partial understanding due to external dependencies - note these gaps in your analysis
+- **Final Assembly**: Remember that the final writer will have access to all analyzed files and can cross-reference to complete the understanding
+- **Avoid Speculation**: Don't guess about external implementations - focus on what you can directly observe in the current file
 
 Focus on understanding the codebase incrementally, but only when there's clear justification for reading additional files.
 
 **Important**: Consider the analysis history and main goal to determine if you have sufficient understanding. If you believe you have analyzed enough files to achieve the main goal and understand the key aspects of the codebase, you should complete the analysis rather than continuing indefinitely.
 </Instructions>
+
+<FileSelectionRule>
+**MANDATORY**: Your next_filename MUST be exactly one file from "AVAILABLE FILES FOR NEXT ANALYSIS" section above.
+
+**EXAMPLE**:
+- If you see "○ [FILE] embedder.go (PENDING)" → You CAN select "embedder.go"
+- If a file is in BackgroundContext → You CANNOT select it (already analyzed)
+</FileSelectionRule>
 
 <OutputFormat>
 **Every response MUST consist solely of valid YAML that conforms exactly to the schema below—no extra text, explanations, or comments.**
@@ -267,13 +352,13 @@ Focus on understanding the codebase incrementally, but only when there's clear j
 \`\`\`yaml
 current_analysis:
   filename: "current/file/path.ext"        # string - file being analyzed
-  understanding: "Analysis and insights based on main goal"      # string - purpose, functionality, notable points
+  understanding: "Analysis and insights based on main goal. Include what this file implements, its role in the system, key functionality, and any dependencies or external references that would need further investigation."      # string - purpose, functionality, notable points, dependencies
 next_focus_proposal:
-  next_filename: "next/file/path.ext"      # string - exactly ONE file to analyze next
+  next_filename: "file.ext"                # string - MUST be exactly ONE file from "AVAILABLE FILES FOR NEXT ANALYSIS" list
   reason: "Why this is the logical next step"  # string - reasoning for next file choice
 \`\`\`
 
-**If analysis is complete:**
+**If no pending files listed, it means analysis is complete:**
 \`\`\`yaml
 analysis_complete: true
 final_understanding: "Overall comprehensive understanding"  # string - synthesis of all analyzed files
@@ -295,13 +380,11 @@ Repository: test
 Main Goal: Learn
 
 
-File Structure:
+AVAILABLE FILES FOR NEXT ANALYSIS (PENDING FILES ONLY):
 No files available
-</AnalysisContext>
 
-<AnalysisHistory>
-This is the beginning of the analysis - no files have been analyzed yet.
-</AnalysisHistory>
+**CRITICAL**: Your next file selection MUST be from the list above. Only files marked "○ [FILE] ... (PENDING)" can be selected.
+</AnalysisContext>
 
 
 
@@ -319,23 +402,54 @@ const standalone = 'test';
 
 <Instructions>
 1. **Analyze the file content** thoroughly to understand its purpose, key functionality, and role
-2. **Provide your analysis and understanding** of what this file does and why it's important
-3. **Propose the next logical file** to analyze based on your understanding
+2. **Focus on what you can understand from this file alone** - don't worry about incomplete understanding due to external dependencies
+3. **Record any dependencies or references** to other files/components that would need further investigation
+4. **Provide your analysis and understanding** of what this file does and why it's important
+5. **Propose the next logical file** to analyze - MUST choose from "AVAILABLE FILES FOR NEXT ANALYSIS" section above
 
 **CRITICAL ANALYSIS PRINCIPLES**:
 
-1. **HIGH-CONFIDENCE SELECTION ONLY**: Only propose to read a file if you have HIGH CONFIDENCE (>80%) that it is directly relevant to the current user task and main goal. Do not propose files for exploratory purposes or "just to see what's there."
+1. **NEXT FILE MUST BE FROM PENDING LIST**: Your next_filename MUST be exactly one of the files marked "○ [FILE] ... (PENDING)" from "AVAILABLE FILES FOR NEXT ANALYSIS" section.
 
-2. **NO REDUNDANT READING**: Never propose to re-read files that are already listed in the Analysis History. Those files have been completely analyzed and their understanding is already captured in the summaries above.
+2. **FOCUS ON CURRENT FILE**: Analyze the current file's content thoroughly, even if some parts depend on other files. Record dependencies and incomplete understanding in your analysis - the final writer will cross-reference multiple files to complete the picture.
 
-3. **TARGETED ANALYSIS**: Before proposing the next file, clearly articulate why that specific file is essential for understanding the main goal. Avoid generic reasoning like "to understand the project better" - be specific about what gap in understanding this file will fill.
+3. **RECORD DEPENDENCIES**: When you encounter references to other files, interfaces, or components not fully defined in the current file, note them in your analysis rather than trying to resolve them immediately.
 
-4. **EFFICIENCY OVER COMPLETENESS**: It's better to analyze fewer, highly relevant files thoroughly than to read many files with marginal relevance. Focus on the files that are most critical to achieving the main goal.
+4. **HIGH-CONFIDENCE SELECTION ONLY**: Only propose to read a file if you have HIGH CONFIDENCE (>80%) that it is directly relevant to the current user task and main goal.
+
+5. **NO REDUNDANT READING**: Never propose files that appear in BackgroundContext - those are already analyzed.
+
+6. **TARGETED ANALYSIS**: Be specific about what gap in understanding the chosen file will fill.
+
+7. **EFFICIENCY OVER COMPLETENESS**: Focus on files most critical to achieving the main goal.
+
+<Instructions>
+1. **Analyze the file content** thoroughly to understand its purpose, key functionality, and role
+2. **Focus on what you can understand from this file alone** - don't worry about incomplete understanding due to external dependencies
+3. **Record any dependencies or references** to other files/components that would need further investigation
+4. **Provide your analysis and understanding** of what this file does and why it's important
+5. **Propose the next logical file** to analyze - MUST choose from "AVAILABLE FILES FOR NEXT ANALYSIS" section above
+
+**ANALYSIS FOCUS GUIDELINES**:
+
+- **Current File Priority**: Your primary focus should be understanding what the current file implements, defines, and contributes to the system
+- **Dependencies as Notes**: When you encounter imports, interfaces, or references to other files, record them as dependencies rather than trying to fully understand them
+- **Incomplete Understanding is OK**: It's acceptable to have partial understanding due to external dependencies - note these gaps in your analysis
+- **Final Assembly**: Remember that the final writer will have access to all analyzed files and can cross-reference to complete the understanding
+- **Avoid Speculation**: Don't guess about external implementations - focus on what you can directly observe in the current file
 
 Focus on understanding the codebase incrementally, but only when there's clear justification for reading additional files.
 
 **Important**: Consider the analysis history and main goal to determine if you have sufficient understanding. If you believe you have analyzed enough files to achieve the main goal and understand the key aspects of the codebase, you should complete the analysis rather than continuing indefinitely.
 </Instructions>
+
+<FileSelectionRule>
+**MANDATORY**: Your next_filename MUST be exactly one file from "AVAILABLE FILES FOR NEXT ANALYSIS" section above.
+
+**EXAMPLE**:
+- If you see "○ [FILE] embedder.go (PENDING)" → You CAN select "embedder.go"
+- If a file is in BackgroundContext → You CANNOT select it (already analyzed)
+</FileSelectionRule>
 
 <OutputFormat>
 **Every response MUST consist solely of valid YAML that conforms exactly to the schema below—no extra text, explanations, or comments.**
@@ -344,13 +458,13 @@ Focus on understanding the codebase incrementally, but only when there's clear j
 \`\`\`yaml
 current_analysis:
   filename: "current/file/path.ext"        # string - file being analyzed
-  understanding: "Analysis and insights based on main goal"      # string - purpose, functionality, notable points
+  understanding: "Analysis and insights based on main goal. Include what this file implements, its role in the system, key functionality, and any dependencies or external references that would need further investigation."      # string - purpose, functionality, notable points, dependencies
 next_focus_proposal:
-  next_filename: "next/file/path.ext"      # string - exactly ONE file to analyze next
+  next_filename: "file.ext"                # string - MUST be exactly ONE file from "AVAILABLE FILES FOR NEXT ANALYSIS" list
   reason: "Why this is the logical next step"  # string - reasoning for next file choice
 \`\`\`
 
-**If analysis is complete:**
+**If no pending files listed, it means analysis is complete:**
 \`\`\`yaml
 analysis_complete: true
 final_understanding: "Overall comprehensive understanding"  # string - synthesis of all analyzed files
@@ -372,13 +486,11 @@ Repository: test
 Main Goal: Learn
 
 
-File Structure:
+AVAILABLE FILES FOR NEXT ANALYSIS (PENDING FILES ONLY):
 No files available
-</AnalysisContext>
 
-<AnalysisHistory>
-This is the beginning of the analysis - no files have been analyzed yet.
-</AnalysisHistory>
+**CRITICAL**: Your next file selection MUST be from the list above. Only files marked "○ [FILE] ... (PENDING)" can be selected.
+</AnalysisContext>
 
 
 
@@ -399,24 +511,54 @@ const a = 4;
 
 <Instructions>
 1. **Acknowledge and incorporate** the user's refined understanding from the previous file
-2. **Analyze the current file** with the refined context in mind
-3. **Ensure consistency** between the refined previous analysis and current analysis
-4. **Propose the next logical file** that builds upon this refined understanding
+2. **Analyze the current file** with the refined context in mind, focusing on this file's specific contributions
+3. **Note any dependencies or connections** to other components without trying to fully resolve them
+4. **Ensure consistency** between the refined previous analysis and current analysis
+5. **Propose the next logical file** - MUST choose from "AVAILABLE FILES FOR NEXT ANALYSIS" section above
 
 **CRITICAL ANALYSIS PRINCIPLES**:
 
-1. **HIGH-CONFIDENCE SELECTION ONLY**: Only propose to read a file if you have HIGH CONFIDENCE (>80%) that it is directly relevant to the current user task and main goal. Do not propose files for exploratory purposes or "just to see what's there."
+1. **NEXT FILE MUST BE FROM PENDING LIST**: Your next_filename MUST be exactly one of the files marked "○ [FILE] ... (PENDING)" from "AVAILABLE FILES FOR NEXT ANALYSIS" section.
 
-2. **NO REDUNDANT READING**: Never propose to re-read files that are already listed in the Analysis History. Those files have been completely analyzed and their understanding is already captured in the summaries above.
+2. **FOCUS ON CURRENT FILE**: Analyze the current file's content thoroughly, even if some parts depend on other files. Record dependencies and incomplete understanding in your analysis - the final writer will cross-reference multiple files to complete the picture.
 
-3. **TARGETED ANALYSIS**: Before proposing the next file, clearly articulate why that specific file is essential for understanding the main goal. Avoid generic reasoning like "to understand the project better" - be specific about what gap in understanding this file will fill.
+3. **RECORD DEPENDENCIES**: When you encounter references to other files, interfaces, or components not fully defined in the current file, note them in your analysis rather than trying to resolve them immediately.
 
-4. **EFFICIENCY OVER COMPLETENESS**: It's better to analyze fewer, highly relevant files thoroughly than to read many files with marginal relevance. Focus on the files that are most critical to achieving the main goal.
+4. **HIGH-CONFIDENCE SELECTION ONLY**: Only propose to read a file if you have HIGH CONFIDENCE (>80%) that it is directly relevant to the current user task and main goal.
+
+5. **NO REDUNDANT READING**: Never propose files that appear in BackgroundContext - those are already analyzed.
+
+6. **TARGETED ANALYSIS**: Be specific about what gap in understanding the chosen file will fill.
+
+7. **EFFICIENCY OVER COMPLETENESS**: Focus on files most critical to achieving the main goal.
+
+<Instructions>
+1. **Acknowledge and incorporate** the user's refined understanding from the previous file
+2. **Analyze the current file** with the refined context in mind, focusing on this file's specific contributions
+3. **Note any dependencies or connections** to other components without trying to fully resolve them
+4. **Ensure consistency** between the refined previous analysis and current analysis
+5. **Propose the next logical file** - MUST choose from "AVAILABLE FILES FOR NEXT ANALYSIS" section above
+
+**ANALYSIS FOCUS GUIDELINES**:
+
+- **Current File Priority**: Your primary focus should be understanding what the current file implements, defines, and contributes to the system
+- **Dependencies as Notes**: When you encounter imports, interfaces, or references to other files, record them as dependencies rather than trying to fully understand them
+- **Incomplete Understanding is OK**: It's acceptable to have partial understanding due to external dependencies - note these gaps in your analysis
+- **Final Assembly**: Remember that the final writer will have access to all analyzed files and can cross-reference to complete the understanding
+- **Avoid Speculation**: Don't guess about external implementations - focus on what you can directly observe in the current file
 
 Focus on understanding the codebase incrementally, but only when there's clear justification for reading additional files.
 
 **Important**: Consider the analysis history and main goal to determine if you have sufficient understanding. If you believe you have analyzed enough files to achieve the main goal and understand the key aspects of the codebase, you should complete the analysis rather than continuing indefinitely.
 </Instructions>
+
+<FileSelectionRule>
+**MANDATORY**: Your next_filename MUST be exactly one file from "AVAILABLE FILES FOR NEXT ANALYSIS" section above.
+
+**EXAMPLE**:
+- If you see "○ [FILE] embedder.go (PENDING)" → You CAN select "embedder.go"
+- If a file is in BackgroundContext → You CANNOT select it (already analyzed)
+</FileSelectionRule>
 
 <OutputFormat>
 **Every response MUST consist solely of valid YAML that conforms exactly to the schema below—no extra text, explanations, or comments.**
@@ -425,13 +567,13 @@ Focus on understanding the codebase incrementally, but only when there's clear j
 \`\`\`yaml
 current_analysis:
   filename: "current/file/path.ext"        # string - file being analyzed
-  understanding: "Analysis and insights based on main goal"      # string - purpose, functionality, notable points
+  understanding: "Analysis and insights based on main goal. Include what this file implements, its role in the system, key functionality, and any dependencies or external references that would need further investigation."      # string - purpose, functionality, notable points, dependencies
 next_focus_proposal:
-  next_filename: "next/file/path.ext"      # string - exactly ONE file to analyze next
+  next_filename: "file.ext"                # string - MUST be exactly ONE file from "AVAILABLE FILES FOR NEXT ANALYSIS" list
   reason: "Why this is the logical next step"  # string - reasoning for next file choice
 \`\`\`
 
-**If analysis is complete:**
+**If no pending files listed, it means analysis is complete:**
 \`\`\`yaml
 analysis_complete: true
 final_understanding: "Overall comprehensive understanding"  # string - synthesis of all analyzed files
@@ -453,13 +595,11 @@ Repository: test
 Main Goal: Learn
 
 
-File Structure:
+AVAILABLE FILES FOR NEXT ANALYSIS (PENDING FILES ONLY):
 No files available
-</AnalysisContext>
 
-<AnalysisHistory>
-This is the beginning of the analysis - no files have been analyzed yet.
-</AnalysisHistory>
+**CRITICAL**: Your next file selection MUST be from the list above. Only files marked "○ [FILE] ... (PENDING)" can be selected.
+</AnalysisContext>
 
 
 
@@ -477,24 +617,54 @@ const z = 3;
 
 <Instructions>
 1. **Re-examine the file content** with the user's feedback in mind
-2. **Address the concerns** raised in the rejection reason
-3. **Provide a corrected analysis** that better reflects the file's actual purpose and functionality
-4. **Propose the next logical file** based on the corrected understanding
+2. **Focus on what this specific file implements and defines** - record dependencies and external references
+3. **Address the concerns** raised in the rejection reason
+4. **Provide a corrected analysis** that better reflects the file's actual purpose and functionality
+5. **Propose the next logical file** - MUST choose from "AVAILABLE FILES FOR NEXT ANALYSIS" section above
 
 **CRITICAL ANALYSIS PRINCIPLES**:
 
-1. **HIGH-CONFIDENCE SELECTION ONLY**: Only propose to read a file if you have HIGH CONFIDENCE (>80%) that it is directly relevant to the current user task and main goal. Do not propose files for exploratory purposes or "just to see what's there."
+1. **NEXT FILE MUST BE FROM PENDING LIST**: Your next_filename MUST be exactly one of the files marked "○ [FILE] ... (PENDING)" from "AVAILABLE FILES FOR NEXT ANALYSIS" section.
 
-2. **NO REDUNDANT READING**: Never propose to re-read files that are already listed in the Analysis History. Those files have been completely analyzed and their understanding is already captured in the summaries above.
+2. **FOCUS ON CURRENT FILE**: Analyze the current file's content thoroughly, even if some parts depend on other files. Record dependencies and incomplete understanding in your analysis - the final writer will cross-reference multiple files to complete the picture.
 
-3. **TARGETED ANALYSIS**: Before proposing the next file, clearly articulate why that specific file is essential for understanding the main goal. Avoid generic reasoning like "to understand the project better" - be specific about what gap in understanding this file will fill.
+3. **RECORD DEPENDENCIES**: When you encounter references to other files, interfaces, or components not fully defined in the current file, note them in your analysis rather than trying to resolve them immediately.
 
-4. **EFFICIENCY OVER COMPLETENESS**: It's better to analyze fewer, highly relevant files thoroughly than to read many files with marginal relevance. Focus on the files that are most critical to achieving the main goal.
+4. **HIGH-CONFIDENCE SELECTION ONLY**: Only propose to read a file if you have HIGH CONFIDENCE (>80%) that it is directly relevant to the current user task and main goal.
+
+5. **NO REDUNDANT READING**: Never propose files that appear in BackgroundContext - those are already analyzed.
+
+6. **TARGETED ANALYSIS**: Be specific about what gap in understanding the chosen file will fill.
+
+7. **EFFICIENCY OVER COMPLETENESS**: Focus on files most critical to achieving the main goal.
+
+<Instructions>
+1. **Re-examine the file content** with the user's feedback in mind
+2. **Focus on what this specific file implements and defines** - record dependencies and external references
+3. **Address the concerns** raised in the rejection reason
+4. **Provide a corrected analysis** that better reflects the file's actual purpose and functionality
+5. **Propose the next logical file** - MUST choose from "AVAILABLE FILES FOR NEXT ANALYSIS" section above
+
+**ANALYSIS FOCUS GUIDELINES**:
+
+- **Current File Priority**: Your primary focus should be understanding what the current file implements, defines, and contributes to the system
+- **Dependencies as Notes**: When you encounter imports, interfaces, or references to other files, record them as dependencies rather than trying to fully understand them
+- **Incomplete Understanding is OK**: It's acceptable to have partial understanding due to external dependencies - note these gaps in your analysis
+- **Final Assembly**: Remember that the final writer will have access to all analyzed files and can cross-reference to complete the understanding
+- **Avoid Speculation**: Don't guess about external implementations - focus on what you can directly observe in the current file
 
 Focus on understanding the codebase incrementally, but only when there's clear justification for reading additional files.
 
 **Important**: Consider the analysis history and main goal to determine if you have sufficient understanding. If you believe you have analyzed enough files to achieve the main goal and understand the key aspects of the codebase, you should complete the analysis rather than continuing indefinitely.
 </Instructions>
+
+<FileSelectionRule>
+**MANDATORY**: Your next_filename MUST be exactly one file from "AVAILABLE FILES FOR NEXT ANALYSIS" section above.
+
+**EXAMPLE**:
+- If you see "○ [FILE] embedder.go (PENDING)" → You CAN select "embedder.go"
+- If a file is in BackgroundContext → You CANNOT select it (already analyzed)
+</FileSelectionRule>
 
 <OutputFormat>
 **Every response MUST consist solely of valid YAML that conforms exactly to the schema below—no extra text, explanations, or comments.**
@@ -503,13 +673,13 @@ Focus on understanding the codebase incrementally, but only when there's clear j
 \`\`\`yaml
 current_analysis:
   filename: "current/file/path.ext"        # string - file being analyzed
-  understanding: "Analysis and insights based on main goal"      # string - purpose, functionality, notable points
+  understanding: "Analysis and insights based on main goal. Include what this file implements, its role in the system, key functionality, and any dependencies or external references that would need further investigation."      # string - purpose, functionality, notable points, dependencies
 next_focus_proposal:
-  next_filename: "next/file/path.ext"      # string - exactly ONE file to analyze next
+  next_filename: "file.ext"                # string - MUST be exactly ONE file from "AVAILABLE FILES FOR NEXT ANALYSIS" list
   reason: "Why this is the logical next step"  # string - reasoning for next file choice
 \`\`\`
 
-**If analysis is complete:**
+**If no pending files listed, it means analysis is complete:**
 \`\`\`yaml
 analysis_complete: true
 final_understanding: "Overall comprehensive understanding"  # string - synthesis of all analyzed files
@@ -531,26 +701,11 @@ Repository: test
 Main Goal: Learn
 
 
-File Structure:
-Available Files and Directories:
+AVAILABLE FILES FOR NEXT ANALYSIS (PENDING FILES ONLY):
+No files available
 
-✓ [FILE] done.ts (ANALYZED)
-
-Legend:
-✓ = Already analyzed
-○ = Available for analysis
-[DIR] = Directory
-[FILE] = File
+**CRITICAL**: Your next file selection MUST be from the list above. Only files marked "○ [FILE] ... (PENDING)" can be selected.
 </AnalysisContext>
-
-<AnalysisHistory>
-Files analyzed so far (1 files), DO NOT propose to re-read these files:
-1. done.ts
-
-Progress: You have analyzed 1 files. Consider whether this provides sufficient understanding for the main goal or if more files are needed.
-
-**CRITICAL**: These files have already been analyzed and summarized. DO NOT propose to re-read any of these files. The analysis above represents the complete understanding from these files.
-</AnalysisHistory>
 
 
 
@@ -568,23 +723,54 @@ const b = 5;
 
 <Instructions>
 1. **Analyze the file content** thoroughly to understand its purpose, key functionality, and role
-2. **Provide your analysis and understanding** of what this file does and why it's important
-3. **Propose the next logical file** to analyze based on your understanding
+2. **Focus on what you can understand from this file alone** - don't worry about incomplete understanding due to external dependencies
+3. **Record any dependencies or references** to other files/components that would need further investigation
+4. **Provide your analysis and understanding** of what this file does and why it's important
+5. **Propose the next logical file** to analyze - MUST choose from "AVAILABLE FILES FOR NEXT ANALYSIS" section above
 
 **CRITICAL ANALYSIS PRINCIPLES**:
 
-1. **HIGH-CONFIDENCE SELECTION ONLY**: Only propose to read a file if you have HIGH CONFIDENCE (>80%) that it is directly relevant to the current user task and main goal. Do not propose files for exploratory purposes or "just to see what's there."
+1. **NEXT FILE MUST BE FROM PENDING LIST**: Your next_filename MUST be exactly one of the files marked "○ [FILE] ... (PENDING)" from "AVAILABLE FILES FOR NEXT ANALYSIS" section.
 
-2. **NO REDUNDANT READING**: Never propose to re-read files that are already listed in the Analysis History. Those files have been completely analyzed and their understanding is already captured in the summaries above.
+2. **FOCUS ON CURRENT FILE**: Analyze the current file's content thoroughly, even if some parts depend on other files. Record dependencies and incomplete understanding in your analysis - the final writer will cross-reference multiple files to complete the picture.
 
-3. **TARGETED ANALYSIS**: Before proposing the next file, clearly articulate why that specific file is essential for understanding the main goal. Avoid generic reasoning like "to understand the project better" - be specific about what gap in understanding this file will fill.
+3. **RECORD DEPENDENCIES**: When you encounter references to other files, interfaces, or components not fully defined in the current file, note them in your analysis rather than trying to resolve them immediately.
 
-4. **EFFICIENCY OVER COMPLETENESS**: It's better to analyze fewer, highly relevant files thoroughly than to read many files with marginal relevance. Focus on the files that are most critical to achieving the main goal.
+4. **HIGH-CONFIDENCE SELECTION ONLY**: Only propose to read a file if you have HIGH CONFIDENCE (>80%) that it is directly relevant to the current user task and main goal.
+
+5. **NO REDUNDANT READING**: Never propose files that appear in BackgroundContext - those are already analyzed.
+
+6. **TARGETED ANALYSIS**: Be specific about what gap in understanding the chosen file will fill.
+
+7. **EFFICIENCY OVER COMPLETENESS**: Focus on files most critical to achieving the main goal.
+
+<Instructions>
+1. **Analyze the file content** thoroughly to understand its purpose, key functionality, and role
+2. **Focus on what you can understand from this file alone** - don't worry about incomplete understanding due to external dependencies
+3. **Record any dependencies or references** to other files/components that would need further investigation
+4. **Provide your analysis and understanding** of what this file does and why it's important
+5. **Propose the next logical file** to analyze - MUST choose from "AVAILABLE FILES FOR NEXT ANALYSIS" section above
+
+**ANALYSIS FOCUS GUIDELINES**:
+
+- **Current File Priority**: Your primary focus should be understanding what the current file implements, defines, and contributes to the system
+- **Dependencies as Notes**: When you encounter imports, interfaces, or references to other files, record them as dependencies rather than trying to fully understand them
+- **Incomplete Understanding is OK**: It's acceptable to have partial understanding due to external dependencies - note these gaps in your analysis
+- **Final Assembly**: Remember that the final writer will have access to all analyzed files and can cross-reference to complete the understanding
+- **Avoid Speculation**: Don't guess about external implementations - focus on what you can directly observe in the current file
 
 Focus on understanding the codebase incrementally, but only when there's clear justification for reading additional files.
 
 **Important**: Consider the analysis history and main goal to determine if you have sufficient understanding. If you believe you have analyzed enough files to achieve the main goal and understand the key aspects of the codebase, you should complete the analysis rather than continuing indefinitely.
 </Instructions>
+
+<FileSelectionRule>
+**MANDATORY**: Your next_filename MUST be exactly one file from "AVAILABLE FILES FOR NEXT ANALYSIS" section above.
+
+**EXAMPLE**:
+- If you see "○ [FILE] embedder.go (PENDING)" → You CAN select "embedder.go"
+- If a file is in BackgroundContext → You CANNOT select it (already analyzed)
+</FileSelectionRule>
 
 <OutputFormat>
 **Every response MUST consist solely of valid YAML that conforms exactly to the schema below—no extra text, explanations, or comments.**
@@ -593,13 +779,13 @@ Focus on understanding the codebase incrementally, but only when there's clear j
 \`\`\`yaml
 current_analysis:
   filename: "current/file/path.ext"        # string - file being analyzed
-  understanding: "Analysis and insights based on main goal"      # string - purpose, functionality, notable points
+  understanding: "Analysis and insights based on main goal. Include what this file implements, its role in the system, key functionality, and any dependencies or external references that would need further investigation."      # string - purpose, functionality, notable points, dependencies
 next_focus_proposal:
-  next_filename: "next/file/path.ext"      # string - exactly ONE file to analyze next
+  next_filename: "file.ext"                # string - MUST be exactly ONE file from "AVAILABLE FILES FOR NEXT ANALYSIS" list
   reason: "Why this is the logical next step"  # string - reasoning for next file choice
 \`\`\`
 
-**If analysis is complete:**
+**If no pending files listed, it means analysis is complete:**
 \`\`\`yaml
 analysis_complete: true
 final_understanding: "Overall comprehensive understanding"  # string - synthesis of all analyzed files
@@ -621,16 +807,14 @@ Repository: test
 Main Goal: Learn
 
 
-File Structure:
+AVAILABLE FILES FOR NEXT ANALYSIS (PENDING FILES ONLY):
 No files available
+
+**CRITICAL**: Your next file selection MUST be from the list above. Only files marked "○ [FILE] ... (PENDING)" can be selected.
 </AnalysisContext>
 
-<AnalysisHistory>
-This is the beginning of the analysis - no files have been analyzed yet.
-</AnalysisHistory>
-
-<RelevantContext>
-The following related file understandings might be useful for analyzing the current file:
+<BackgroundContext>
+Previous analysis results for context (DO NOT SELECT FROM HERE):
 
 1. File: related1.ts
 This file handles authentication logic
@@ -638,8 +822,8 @@ This file handles authentication logic
 2. File: related2.ts
 This file manages user sessions
 
-**Note**: Use this context to enhance your understanding but focus primarily on the current file being analyzed.
-</RelevantContext>
+**WARNING**: Files mentioned above are already analyzed. Use this only for understanding context.
+</BackgroundContext>
 
 <CurrentScenario>
 **ANALYZE NEW FILE**: target.ts
@@ -655,23 +839,54 @@ const target = true;
 
 <Instructions>
 1. **Analyze the file content** thoroughly to understand its purpose, key functionality, and role
-2. **Provide your analysis and understanding** of what this file does and why it's important
-3. **Propose the next logical file** to analyze based on your understanding
+2. **Focus on what you can understand from this file alone** - don't worry about incomplete understanding due to external dependencies
+3. **Record any dependencies or references** to other files/components that would need further investigation
+4. **Provide your analysis and understanding** of what this file does and why it's important
+5. **Propose the next logical file** to analyze - MUST choose from "AVAILABLE FILES FOR NEXT ANALYSIS" section above
 
 **CRITICAL ANALYSIS PRINCIPLES**:
 
-1. **HIGH-CONFIDENCE SELECTION ONLY**: Only propose to read a file if you have HIGH CONFIDENCE (>80%) that it is directly relevant to the current user task and main goal. Do not propose files for exploratory purposes or "just to see what's there."
+1. **NEXT FILE MUST BE FROM PENDING LIST**: Your next_filename MUST be exactly one of the files marked "○ [FILE] ... (PENDING)" from "AVAILABLE FILES FOR NEXT ANALYSIS" section.
 
-2. **NO REDUNDANT READING**: Never propose to re-read files that are already listed in the Analysis History. Those files have been completely analyzed and their understanding is already captured in the summaries above.
+2. **FOCUS ON CURRENT FILE**: Analyze the current file's content thoroughly, even if some parts depend on other files. Record dependencies and incomplete understanding in your analysis - the final writer will cross-reference multiple files to complete the picture.
 
-3. **TARGETED ANALYSIS**: Before proposing the next file, clearly articulate why that specific file is essential for understanding the main goal. Avoid generic reasoning like "to understand the project better" - be specific about what gap in understanding this file will fill.
+3. **RECORD DEPENDENCIES**: When you encounter references to other files, interfaces, or components not fully defined in the current file, note them in your analysis rather than trying to resolve them immediately.
 
-4. **EFFICIENCY OVER COMPLETENESS**: It's better to analyze fewer, highly relevant files thoroughly than to read many files with marginal relevance. Focus on the files that are most critical to achieving the main goal.
+4. **HIGH-CONFIDENCE SELECTION ONLY**: Only propose to read a file if you have HIGH CONFIDENCE (>80%) that it is directly relevant to the current user task and main goal.
+
+5. **NO REDUNDANT READING**: Never propose files that appear in BackgroundContext - those are already analyzed.
+
+6. **TARGETED ANALYSIS**: Be specific about what gap in understanding the chosen file will fill.
+
+7. **EFFICIENCY OVER COMPLETENESS**: Focus on files most critical to achieving the main goal.
+
+<Instructions>
+1. **Analyze the file content** thoroughly to understand its purpose, key functionality, and role
+2. **Focus on what you can understand from this file alone** - don't worry about incomplete understanding due to external dependencies
+3. **Record any dependencies or references** to other files/components that would need further investigation
+4. **Provide your analysis and understanding** of what this file does and why it's important
+5. **Propose the next logical file** to analyze - MUST choose from "AVAILABLE FILES FOR NEXT ANALYSIS" section above
+
+**ANALYSIS FOCUS GUIDELINES**:
+
+- **Current File Priority**: Your primary focus should be understanding what the current file implements, defines, and contributes to the system
+- **Dependencies as Notes**: When you encounter imports, interfaces, or references to other files, record them as dependencies rather than trying to fully understand them
+- **Incomplete Understanding is OK**: It's acceptable to have partial understanding due to external dependencies - note these gaps in your analysis
+- **Final Assembly**: Remember that the final writer will have access to all analyzed files and can cross-reference to complete the understanding
+- **Avoid Speculation**: Don't guess about external implementations - focus on what you can directly observe in the current file
 
 Focus on understanding the codebase incrementally, but only when there's clear justification for reading additional files.
 
 **Important**: Consider the analysis history and main goal to determine if you have sufficient understanding. If you believe you have analyzed enough files to achieve the main goal and understand the key aspects of the codebase, you should complete the analysis rather than continuing indefinitely.
 </Instructions>
+
+<FileSelectionRule>
+**MANDATORY**: Your next_filename MUST be exactly one file from "AVAILABLE FILES FOR NEXT ANALYSIS" section above.
+
+**EXAMPLE**:
+- If you see "○ [FILE] embedder.go (PENDING)" → You CAN select "embedder.go"
+- If a file is in BackgroundContext → You CANNOT select it (already analyzed)
+</FileSelectionRule>
 
 <OutputFormat>
 **Every response MUST consist solely of valid YAML that conforms exactly to the schema below—no extra text, explanations, or comments.**
@@ -680,13 +895,13 @@ Focus on understanding the codebase incrementally, but only when there's clear j
 \`\`\`yaml
 current_analysis:
   filename: "current/file/path.ext"        # string - file being analyzed
-  understanding: "Analysis and insights based on main goal"      # string - purpose, functionality, notable points
+  understanding: "Analysis and insights based on main goal. Include what this file implements, its role in the system, key functionality, and any dependencies or external references that would need further investigation."      # string - purpose, functionality, notable points, dependencies
 next_focus_proposal:
-  next_filename: "next/file/path.ext"      # string - exactly ONE file to analyze next
+  next_filename: "file.ext"                # string - MUST be exactly ONE file from "AVAILABLE FILES FOR NEXT ANALYSIS" list
   reason: "Why this is the logical next step"  # string - reasoning for next file choice
 \`\`\`
 
-**If analysis is complete:**
+**If no pending files listed, it means analysis is complete:**
 \`\`\`yaml
 analysis_complete: true
 final_understanding: "Overall comprehensive understanding"  # string - synthesis of all analyzed files

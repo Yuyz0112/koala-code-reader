@@ -83,13 +83,14 @@ github.get("/:owner/:repo", async (c) => {
 github.get("/:owner/:repo/contents/:filePath{.*}", async (c) => {
   const { owner, repo, filePath } = c.req.param();
   const ref = c.req.query("ref") || "main";
+  const githubToken = env(c).GITHUB_TOKEN as string;
 
   try {
     // Construct the GitHub URL
     const githubUrl = `https://github.com/${owner}/${repo}`;
 
     // Use the fs utility to read the file content
-    const content = await readFromGithub(githubUrl, filePath, ref);
+    const content = await readFromGithub(githubUrl, filePath, ref, githubToken);
 
     return c.json({
       content,

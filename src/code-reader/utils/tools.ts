@@ -12,7 +12,7 @@ import {
 export function createAgenticWriterTools(
   memoryLayer: MemoryLayer,
   basic: SharedStorage["basic"],
-  env?: any
+  githubToken: string
 ) {
   return {
     get_memory_understanding: tool({
@@ -159,7 +159,7 @@ export function createAgenticWriterTools(
             basic.githubUrl || "",
             filePath,
             basic.githubRef || "main",
-            env
+            githubToken
           );
 
           return {
@@ -345,7 +345,7 @@ export function createAgenticWriterTools(
             query,
             searchOptions,
             basic.githubRef || "main",
-            env
+            githubToken
           );
 
           // Return results with metadata
