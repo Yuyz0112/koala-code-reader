@@ -3,7 +3,14 @@ import { FileItem } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
-import { ChevronRight, ChevronDown, FileText, Folder } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  ChevronRight,
+  ChevronDown,
+  FileText,
+  Folder,
+  History,
+} from "lucide-react";
 import { Markdown } from "@/components/Markdown";
 
 interface FileUnderstandingListProps {
@@ -259,8 +266,59 @@ export function FileUnderstandingList({
 
   const tree = buildTree();
   const filesWithUnderstandings = files.filter((file) => file.understanding);
+  const doneFiles = files.filter((file) => file.status === "done");
   const pendingFiles = files.filter((file) => file.status === "pending");
   const ignoredFiles = files.filter((file) => file.status === "ignored");
+
+  // Render history list view
+  const renderHistoryView = () => {
+    if (doneFiles.length === 0) {
+      return (
+        <div className="text-center py-12 text-gray-500">
+          <History className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+          <p>No analyzed files yet.</p>
+          <p className="text-sm">
+            Files will appear here as they are analyzed.
+          </p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        {doneFiles.map((file, index) => (
+          <div key={file.path} className="mb-4">
+            <div
+              className="flex items-center py-2 px-3 hover:bg-gray-50 cursor-pointer rounded-md border bg-white"
+              onClick={() => onFileSelect?.(file.path)}
+            >
+              <span className="mr-3 text-xs text-gray-400 font-mono w-6 text-center">
+                {index + 1}
+              </span>
+              <FileText className="h-4 w-4 mr-2 text-green-500" />
+              <span className="text-sm font-mono font-medium text-gray-700">
+                {file.path}
+              </span>
+              <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                ✓ Analyzed
+              </span>
+            </div>
+
+            {/* Show understanding */}
+            {file.understanding && (
+              <Card className="ml-9 mt-2 border-l-4 border-l-green-500">
+                <CardContent className="p-4">
+                  <Markdown className="text-sm text-gray-600">
+                    {file.understanding}
+                  </Markdown>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   if (files.length === 0) {
     return (
@@ -295,9 +353,34 @@ export function FileUnderstandingList({
           Click on a file to view its content in the Current File tab
         </div>
       </div>
-      <ScrollArea className="flex-1 p-3">
-        <div className="space-y-2">{renderNode(tree)}</div>
-      </ScrollArea>
+
+      <Tabs
+        defaultValue="tree"
+        className="flex-1 flex flex-col overflow-hidden"
+      >
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="tree" className="flex items-center gap-2">
+            <Folder className="h-4 w-4" />
+            File Tree
+          </TabsTrigger>
+          <TabsTrigger value="history" className="flex items-center gap-2">
+            <History className="h-4 w-4" />
+            History ({doneFiles.length})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="tree" className="flex-1 mt-2 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="space-y-2 p-3">{renderNode(tree)}</div>
+          </ScrollArea>
+        </TabsContent>
+
+        <TabsContent value="history" className="flex-1 mt-2 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="p-3">{renderHistoryView()}</div>
+          </ScrollArea>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

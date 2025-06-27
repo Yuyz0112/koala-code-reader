@@ -352,7 +352,10 @@ export class FlowManager {
         return { shared: null, exists: false };
       }
 
-      return { shared: flowRecord.shared || null, exists: true };
+      return {
+        shared: flowRecord.shared || null,
+        exists: true,
+      };
     } catch (error) {
       return { shared: null, exists: false };
     }
