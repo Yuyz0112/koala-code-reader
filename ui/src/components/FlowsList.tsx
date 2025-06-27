@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trash2, RefreshCw, Plus, Play, ExternalLink } from "lucide-react";
@@ -18,6 +18,34 @@ interface FlowsListProps {
   onLoadFlow: (runId: string) => Promise<{ success: boolean; error?: string }>;
   onNewFlow: () => void;
 }
+
+// Expandable text component for truncated content
+const ExpandableText: React.FC<{
+  text: string;
+  maxLength: number;
+  className?: string;
+}> = ({ text, maxLength, className = "" }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  if (text.length <= maxLength) {
+    return <span className={className}>{text}</span>;
+  }
+
+  return (
+    <span className={className}>
+      {isExpanded ? text : `${text.substring(0, maxLength)}...`}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsExpanded(!isExpanded);
+        }}
+        className="ml-1 text-blue-600 hover:text-blue-800 text-xs underline"
+      >
+        {isExpanded ? "show less" : "show more"}
+      </button>
+    </span>
+  );
+};
 
 export const FlowsList: React.FC<FlowsListProps> = ({
   flows,
@@ -99,9 +127,14 @@ export const FlowsList: React.FC<FlowsListProps> = ({
                     {flow.basic?.repoName || "Unknown Repository"}
                   </CardTitle>
                   <p className="text-sm text-gray-600 break-words">
-                    {flow.basic?.mainGoal && flow.basic.mainGoal.length > 80
-                      ? `${flow.basic.mainGoal.substring(0, 80)}...`
-                      : flow.basic?.mainGoal || "No goal specified"}
+                    {flow.basic?.mainGoal ? (
+                      <ExpandableText
+                        text={flow.basic.mainGoal}
+                        maxLength={80}
+                      />
+                    ) : (
+                      "No goal specified"
+                    )}
                   </p>
                   {flow.basic?.githubUrl && (
                     <a
@@ -122,9 +155,10 @@ export const FlowsList: React.FC<FlowsListProps> = ({
                   {flow.basic?.specificAreas && (
                     <p className="text-xs text-gray-500 break-words">
                       Focus:{" "}
-                      {flow.basic.specificAreas.length > 60
-                        ? `${flow.basic.specificAreas.substring(0, 60)}...`
-                        : flow.basic.specificAreas}
+                      <ExpandableText
+                        text={flow.basic.specificAreas}
+                        maxLength={60}
+                      />
                     </p>
                   )}
                 </div>
