@@ -1,9 +1,41 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { apiClient } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Loader2, FileText, AlertCircle } from "lucide-react";
 import { parseGitHubUrl } from "@/lib/utils";
+
+import "./shiki.css";
+
+// Lazy load ShikiHighlighter
+const ShikiHighlighter = lazy(() =>
+  import("react-shiki").then((module) => ({ default: module.default }))
+);
+
+// Map file extensions to Shiki language identifiers
+const getLanguageFromExtension = (extension: string): string => {
+  const languageMap: Record<string, string> = {
+    js: "javascript",
+    jsx: "javascript",
+    ts: "typescript",
+    tsx: "typescript",
+    py: "python",
+    cs: "csharp",
+    rb: "ruby",
+    kt: "kotlin",
+    hs: "haskell",
+    clj: "clojure",
+    ml: "ocaml",
+    fs: "fsharp",
+    sh: "bash",
+    ps1: "powershell",
+    md: "markdown",
+    yml: "yaml",
+    txt: "text",
+  };
+
+  return languageMap[extension] || extension;
+};
 
 interface FileViewerProps {
   filePath: string | null;
@@ -107,6 +139,7 @@ export function FileViewer({
   };
 
   const extension = getFileExtension(filePath);
+  const language = getLanguageFromExtension(extension);
 
   return (
     <div className="bg-white rounded-lg border h-full flex flex-col">
@@ -125,10 +158,24 @@ export function FileViewer({
 
       {/* File content */}
       <ScrollArea className="flex-1">
-        <div className="p-4">
-          <pre className="text-sm font-mono whitespace-pre ">
-            <code className={`language-${extension}`}>{content}</code>
-          </pre>
+        <div>
+          <Suspense
+            fallback={
+              <div className="flex items-center gap-2 text-gray-500">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm">Loading syntax highlighter...</span>
+              </div>
+            }
+          >
+            <ShikiHighlighter
+              language={language}
+              theme="github-light-default"
+              className="text-sm p-0"
+              showLineNumbers
+            >
+              {content}
+            </ShikiHighlighter>
+          </Suspense>
         </div>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
