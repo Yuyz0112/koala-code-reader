@@ -393,6 +393,16 @@ export const useFlowAPI = () => {
     [startPolling]
   );
 
+  // Reset all flow state (for starting a new flow)
+  const resetFlow = useCallback(() => {
+    stopPolling();
+    setMessages([]);
+    setCurrentRunId(null);
+    setFlowStatus(null);
+    setCurrentRequestType(null);
+    setCurrentRequestData(null);
+  }, [stopPolling]);
+
   useEffect(() => {
     return () => {
       stopPolling();
@@ -415,5 +425,6 @@ export const useFlowAPI = () => {
     loadFlows,
     deleteFlow,
     loadFlow,
+    resetFlow,
   };
 };

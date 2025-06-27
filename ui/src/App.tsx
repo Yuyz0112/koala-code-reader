@@ -37,6 +37,7 @@ function App() {
     loadFlows,
     deleteFlow,
     loadFlow,
+    resetFlow,
   } = useFlowAPI();
 
   // Update analysis data when flow status changes
@@ -88,6 +89,14 @@ function App() {
   };
 
   const handleNewFlow = () => {
+    // Clear previous flow state when starting a new flow
+    resetFlow();
+    setAnalysisData({
+      fileUnderstandings: [],
+      reducedOutput: "",
+    });
+    setSelectedFile(null);
+    setActiveTab("current-file");
     setCurrentView("analysis");
   };
 
