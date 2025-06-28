@@ -203,6 +203,7 @@ export function createAgenticWriterTools(
           ),
         knowledge_gaps: z
           .array(z.string())
+          .optional()
           .describe(
             "What important aspects still need exploration, use empty array if none"
           ),

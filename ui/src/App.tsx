@@ -225,6 +225,7 @@ function App() {
               <TabsContent value="summaries" className="flex-1 overflow-hidden">
                 <FileUnderstandingList
                   files={flowStatus?.basic?.files || []}
+                  history={flowStatus?.history || []}
                   onFileSelect={handleFileSelect}
                 />
               </TabsContent>

@@ -1,5 +1,5 @@
 import { Node } from "pocketflow";
-import { FileItem, SharedStorage } from "./utils/storage";
+import { FileItem, SharedStorage, HistoryEntry } from "./utils/storage";
 import { LLM } from "./utils/llm";
 import { MemoryLayer, StorageContext } from "./utils/memory-layer";
 
@@ -372,7 +372,6 @@ export class AnalyzeFileNode extends Node {
   ): Promise<string | undefined> {
     if (!execRes) {
       shared.completed = true;
-      // all files analyzed, let reduce node check buffered understandings
       return Actions.DO_REDUCE;
     }
 
@@ -436,7 +435,12 @@ export class ReduceHistoryNode extends Node {
   ): Promise<
     Pick<
       SharedStorage,
-      "reducedOutput" | "currentFile" | "userFeedback" | "basic" | "completed"
+      | "reducedOutput"
+      | "currentFile"
+      | "userFeedback"
+      | "basic"
+      | "completed"
+      | "history"
     >
   > {
     return {
@@ -445,17 +449,24 @@ export class ReduceHistoryNode extends Node {
       userFeedback: shared.userFeedback,
       basic: shared.basic,
       completed: shared.completed,
+      history: shared.history,
     };
   }
 
   async exec(
     prepRes: Pick<
       SharedStorage,
-      "reducedOutput" | "currentFile" | "userFeedback" | "basic" | "completed"
+      | "reducedOutput"
+      | "currentFile"
+      | "userFeedback"
+      | "basic"
+      | "completed"
+      | "history"
     >
   ): Promise<
     Pick<SharedStorage, "reducedOutput"> & {
       updatedFiles: FileItem[];
+      updatedHistory: HistoryEntry[];
     }
   > {
     console.log(
@@ -487,11 +498,12 @@ export class ReduceHistoryNode extends Node {
       );
     }
 
-    // Step 2: Update files with understanding and add to understandingsBuffer
+    // Step 2: Update files with understanding and add to history
     const updatedFiles = [...prepRes.basic.files];
     const currentFilePath = prepRes.currentFile?.name;
+    const updatedHistory = [...(prepRes.history || [])];
 
-    if (currentFilePath && currentUnderstanding) {
+    if (currentFilePath && currentUnderstanding && prepRes.userFeedback) {
       console.log(
         `[${this.runId}] ReduceHistoryNode.exec: Updating file status for ${currentFilePath}`
       );
@@ -507,6 +519,22 @@ export class ReduceHistoryNode extends Node {
           status: "done" as const,
         };
       }
+
+      // Add entry to history
+      const historyEntry = {
+        filePath: currentFilePath,
+        feedbackAction: prepRes.userFeedback.action,
+        timestamp: Date.now(),
+        reason:
+          "reason" in prepRes.userFeedback
+            ? prepRes.userFeedback.reason
+            : undefined,
+      };
+      updatedHistory.push(historyEntry);
+
+      console.log(
+        `[${this.runId}] ReduceHistoryNode.exec: Added history entry for ${currentFilePath} with action ${prepRes.userFeedback.action}`
+      );
 
       // Store final understanding in Memory Layer
       try {
@@ -559,6 +587,7 @@ export class ReduceHistoryNode extends Node {
     return {
       reducedOutput: final_output,
       updatedFiles,
+      updatedHistory,
     };
   }
 
@@ -567,10 +596,12 @@ export class ReduceHistoryNode extends Node {
     _: unknown,
     execRes: Pick<SharedStorage, "reducedOutput"> & {
       updatedFiles: FileItem[];
+      updatedHistory: HistoryEntry[];
     }
   ): Promise<string | undefined> {
     shared.reducedOutput = execRes.reducedOutput;
     shared.basic.files = execRes.updatedFiles;
+    shared.history = execRes.updatedHistory;
 
     // Check if user requested to finish early
     if (shared.userFeedback?.action === "finish") {

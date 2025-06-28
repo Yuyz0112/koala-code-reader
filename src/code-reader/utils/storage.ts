@@ -7,6 +7,13 @@ export type FileItem = {
   understanding?: string; // Analysis understanding for analyzed files
 };
 
+export type HistoryEntry = {
+  filePath: string;
+  feedbackAction: "accept" | "reject" | "refine" | "finish";
+  timestamp: number;
+  reason?: string;
+};
+
 export type SharedStorage = {
   basic: {
     repoName: string;
@@ -19,6 +26,8 @@ export type SharedStorage = {
     askUser?: string; // If current input is insufficient to get entry files, ask user for more information
     previousWrongPath?: string; // If the LLM selected a wrong path, store it here
   };
+
+  history: HistoryEntry[];
 
   currentFile?: {
     name: string;

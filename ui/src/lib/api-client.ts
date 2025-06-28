@@ -14,6 +14,7 @@ export interface FlowStatus {
     reason: string;
   };
   reducedOutput: string;
+  history?: HistoryEntry[]; // Global history array from backend
   basic?: {
     repoName: string;
     mainGoal: string;
@@ -33,11 +34,19 @@ export interface FlowAPIResponse {
 
 export type FileStatus = "pending" | "ignored" | "done";
 
+export interface HistoryEntry {
+  filePath: string;
+  feedbackAction: "accept" | "reject" | "refine" | "finish";
+  timestamp: number;
+  reason?: string;
+}
+
 export interface FileItem {
   path: string;
   status: FileStatus;
   type: "file" | "directory";
   understanding?: string; // Analysis understanding for analyzed files
+  history?: HistoryEntry[]; // Fallback for historical data
 }
 
 export interface StartAnalysisRequest {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileItem } from "@/lib/api-client";
+import { FileItem, HistoryEntry } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,11 +10,14 @@ import {
   FileText,
   Folder,
   History,
+  Clock,
+  MessageSquare,
 } from "lucide-react";
 import { Markdown } from "@/components/Markdown";
 
 interface FileUnderstandingListProps {
   files: FileItem[];
+  history?: HistoryEntry[]; // Global history from backend
   onFileSelect?: (filePath: string) => void;
 }
 
@@ -30,6 +33,7 @@ interface TreeNode {
 
 export function FileUnderstandingList({
   files,
+  history = [], // Default to empty array for fallback
   onFileSelect,
 }: FileUnderstandingListProps) {
   // Initialize with directories expanded if they contain any files
@@ -266,13 +270,17 @@ export function FileUnderstandingList({
 
   const tree = buildTree();
   const filesWithUnderstandings = files.filter((file) => file.understanding);
-  const doneFiles = files.filter((file) => file.status === "done");
   const pendingFiles = files.filter((file) => file.status === "pending");
   const ignoredFiles = files.filter((file) => file.status === "ignored");
 
   // Render history list view
   const renderHistoryView = () => {
-    if (doneFiles.length === 0) {
+    // Use global history array from backend, sort by timestamp (newest first)
+    const sortedHistory = [...history].sort(
+      (a, b) => b.timestamp - a.timestamp
+    );
+
+    if (sortedHistory.length === 0) {
       return (
         <div className="text-center py-12 text-gray-500">
           <History className="h-12 w-12 mx-auto mb-4 text-gray-300" />
@@ -284,38 +292,113 @@ export function FileUnderstandingList({
       );
     }
 
+    const formatTimestamp = (timestamp: number) => {
+      return new Date(timestamp).toLocaleString();
+    };
+
+    const getActionIcon = (action: string) => {
+      switch (action) {
+        case "accept":
+          return "✅";
+        case "reject":
+          return "❌";
+        case "refine":
+          return "✏️";
+        case "finish":
+          return "🏁";
+        default:
+          return "🔄";
+      }
+    };
+
+    const getActionColor = (action: string) => {
+      switch (action) {
+        case "accept":
+          return "text-green-600 bg-green-50 border-green-200";
+        case "reject":
+          return "text-red-600 bg-red-50 border-red-200";
+        case "refine":
+          return "text-yellow-600 bg-yellow-50 border-yellow-200";
+        case "finish":
+          return "text-blue-600 bg-blue-50 border-blue-200";
+        default:
+          return "text-gray-600 bg-gray-50 border-gray-200";
+      }
+    };
+
     return (
       <div className="space-y-4">
-        {doneFiles.map((file, index) => (
-          <div key={file.path} className="mb-4">
-            <div
-              className="flex items-center py-2 px-3 hover:bg-gray-50 cursor-pointer rounded-md border bg-white"
-              onClick={() => onFileSelect?.(file.path)}
-            >
-              <span className="mr-3 text-xs text-gray-400 font-mono w-6 text-center">
-                {index + 1}
-              </span>
-              <FileText className="h-4 w-4 mr-2 text-green-500" />
-              <span className="text-sm font-mono font-medium text-gray-700">
-                {file.path}
-              </span>
-              <span className="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                ✓ Analyzed
-              </span>
-            </div>
+        {sortedHistory.map((historyEntry, index) => {
+          // Find the corresponding file to get its understanding
+          const file = files.find((f) => f.path === historyEntry.filePath);
 
-            {/* Show understanding */}
-            {file.understanding && (
-              <Card className="ml-9 mt-2 border-l-4 border-l-green-500">
-                <CardContent className="p-4">
-                  <Markdown className="text-sm text-gray-600">
-                    {file.understanding}
-                  </Markdown>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        ))}
+          return (
+            <div
+              key={`${historyEntry.filePath}-${historyEntry.timestamp}`}
+              className="mb-4"
+            >
+              <div
+                className="flex items-center py-2 px-3 hover:bg-gray-50 cursor-pointer rounded-md border bg-white"
+                onClick={() => onFileSelect?.(historyEntry.filePath)}
+              >
+                <span className="mr-3 text-xs text-gray-400 font-mono w-6 text-center">
+                  {index + 1}
+                </span>
+                <FileText className="h-4 w-4 mr-2 text-green-500" />
+                <span className="text-sm font-mono font-medium text-gray-700 flex-1">
+                  {historyEntry.filePath}
+                </span>
+
+                {/* Action badge */}
+                <span
+                  className={`ml-2 px-2 py-1 text-xs rounded-full border ${getActionColor(
+                    historyEntry.feedbackAction
+                  )}`}
+                >
+                  {getActionIcon(historyEntry.feedbackAction)}{" "}
+                  {historyEntry.feedbackAction.charAt(0).toUpperCase() +
+                    historyEntry.feedbackAction.slice(1)}
+                </span>
+
+                {/* Timestamp */}
+                <div className="ml-2 flex items-center text-xs text-gray-500">
+                  <Clock className="h-3 w-3 mr-1" />
+                  {formatTimestamp(historyEntry.timestamp)}
+                </div>
+              </div>
+
+              {/* Show file understanding if available */}
+              {file?.understanding && (
+                <Card className="ml-9 mt-2 border-l-4 border-l-green-500">
+                  <CardContent className="p-4">
+                    <Markdown className="text-sm text-gray-600">
+                      {file.understanding}
+                    </Markdown>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Show user feedback reason if available */}
+              {historyEntry.reason && (
+                <Card className="ml-9 mt-2 border-l-4 border-l-blue-500">
+                  <CardContent className="p-3">
+                    <div className="flex items-start gap-2">
+                      <MessageSquare className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <div className="text-xs font-medium text-blue-700 mb-1">
+                          User Feedback
+                        </div>
+                        <div className="text-sm text-blue-600">
+                          {historyEntry.reason}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          );
+        })}
       </div>
     );
   };
@@ -365,7 +448,7 @@ export function FileUnderstandingList({
           </TabsTrigger>
           <TabsTrigger value="history" className="flex items-center gap-2">
             <History className="h-4 w-4" />
-            History ({doneFiles.length})
+            History ({history.length})
           </TabsTrigger>
         </TabsList>
 

@@ -233,15 +233,28 @@ export class LLM {
         model: this.models.agent,
         prompt,
         tools,
-        temperature: 0.1,
+        temperature: 0.5,
         maxSteps: 150,
         maxRetries: 6,
       });
 
       console.log(
-        `[LLM] AgenticWriter completed after ${result.steps?.length || 0} steps`
+        `[LLM] AgenticWriter completed after ${
+          result.steps?.length || 0
+        } steps, finish reason: ${result.finishReason}`
       );
-      console.log(`[LLM] Tool calls made: ${result.toolCalls?.length || 0}`);
+
+      // console.log(
+      //   result.steps.map((s) => {
+      //     return {
+      //       type: s.stepType,
+      //       toolCalls: s.toolCalls.length,
+      //       toolResults: s.toolResults.length,
+      //       text: s.text,
+      //     };
+      //   })
+      // );
+      // console.log(result.steps[result.steps.length - 1].response.body?.choices);
 
       // Extract the final text - this should be in YAML format
       const finalText = result.text;

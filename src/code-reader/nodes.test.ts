@@ -49,6 +49,7 @@ function createMockSharedStorage(): SharedStorage {
         },
       ],
     },
+    history: [],
     reducedOutput: "",
     completed: false,
   };
@@ -230,6 +231,7 @@ describe("AnalyzeFileNode", () => {
     mockMemoryLayer = createMockMemoryLayer();
     node = new AnalyzeFileNode(
       mockLLM,
+      "mock-github-token",
       mockReadFileFromStorage,
       mockMemoryLayer,
       runId
@@ -349,6 +351,7 @@ describe("AnalyzeFileNode", () => {
     test("should allow reanalysis of completed file when allowReanalyze is true", () => {
       const analyzeFileNode = new AnalyzeFileNode(
         mockLLM,
+        "mock-github-token",
         mockReadFileFromStorage,
         mockMemoryLayer,
         "test-run-id"
@@ -742,6 +745,7 @@ describe("ReduceHistoryNode", () => {
           },
           basic: sharedStorage.basic,
           completed: false,
+          history: [],
         };
 
         const result = await node.exec(prepRes);
@@ -763,6 +767,7 @@ describe("ReduceHistoryNode", () => {
           },
           basic: sharedStorage.basic,
           completed: false,
+          history: [],
         };
 
         const result = await node.exec(prepRes);
@@ -784,6 +789,7 @@ describe("ReduceHistoryNode", () => {
           },
           basic: sharedStorage.basic,
           completed: false,
+          history: [],
         };
 
         await expect(node.exec(prepRes)).rejects.toThrow(
@@ -801,6 +807,7 @@ describe("ReduceHistoryNode", () => {
           userFeedback: undefined,
           basic: sharedStorage.basic,
           completed: false,
+          history: [],
         };
 
         await expect(node.exec(prepRes)).rejects.toThrow(
@@ -836,6 +843,7 @@ describe("ReduceHistoryNode", () => {
             ],
           },
           completed: false,
+          history: [],
         };
 
         const result = await node.exec(prepRes);
@@ -888,6 +896,7 @@ describe("ReduceHistoryNode", () => {
             ],
           },
           completed: false,
+          history: [],
         };
 
         const result = await node.exec(prepRes);
@@ -912,6 +921,7 @@ describe("ReduceHistoryNode", () => {
             understanding: "Test understanding",
           },
         ],
+        updatedHistory: [],
       };
 
       const result = await node.post(sharedStorage, undefined, execRes);
@@ -926,6 +936,7 @@ describe("ReduceHistoryNode", () => {
       const execRes = {
         reducedOutput: "Final output",
         updatedFiles: [],
+        updatedHistory: [],
       };
 
       const result = await node.post(sharedStorage, undefined, execRes);
@@ -939,6 +950,7 @@ describe("ReduceHistoryNode", () => {
       const execRes = {
         reducedOutput: "Intermediate output",
         updatedFiles: [],
+        updatedHistory: [],
       };
 
       const result = await node.post(sharedStorage, undefined, execRes);
