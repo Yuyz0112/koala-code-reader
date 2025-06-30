@@ -4,9 +4,31 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { RequestType } from "@/types";
-import { CheckCircle, XCircle, Edit3 } from "lucide-react";
+import {
+  CheckCircle,
+  XCircle,
+  Edit3,
+  Check,
+  ChevronsUpDown,
+  FileText,
+} from "lucide-react";
 import { Markdown } from "@/components/Markdown";
+import { FileItem } from "@/lib/api-client";
+import { cn } from "@/lib/utils";
 
 interface InteractionPanelProps {
   requestType: RequestType;
@@ -25,6 +47,9 @@ interface InteractionPanelProps {
       name: string;
       reason: string;
     };
+    basic?: {
+      files?: FileItem[];
+    };
   } | null;
 }
 
@@ -39,6 +64,8 @@ export function InteractionPanel({
   const [feedbackMode, setFeedbackMode] = useState<
     "accept" | "reject" | "refine" | null
   >(null);
+  const [selectedNextFile, setSelectedNextFile] = useState<string>("");
+  const [open, setOpen] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,10 +118,16 @@ export function InteractionPanel({
     } else if (feedbackMode === "refine") {
       feedbackData.userUnderstanding = response.trim();
       feedbackData.reason = "User provided refined understanding";
+      // Add selected next file if provided
+      if (selectedNextFile) {
+        feedbackData.nextFile = selectedNextFile;
+      }
     }
 
     onSendResponse(feedbackData);
     setResponse("");
+    setSelectedNextFile("");
+    setOpen(false);
     setFeedbackMode(null);
   };
 
@@ -305,6 +338,104 @@ export function InteractionPanel({
                   )}
                 </div>
 
+                {/* Next File Selection for Refine Mode */}
+                {feedbackMode === "refine" && flowStatus?.basic?.files && (
+                  <div className="space-y-2">
+                    <Label htmlFor="nextFile">
+                      Select Next File to Analyze (Optional)
+                    </Label>
+                    <Popover open={open} onOpenChange={setOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={open}
+                          className="w-full justify-between"
+                          disabled={disabled}
+                        >
+                          {selectedNextFile ? (
+                            <span className="flex items-center gap-2">
+                              <FileText className="h-4 w-4" />
+                              {selectedNextFile}
+                            </span>
+                          ) : (
+                            "Let AI choose the next file (default)"
+                          )}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] max-h-[300px] p-0">
+                        <Command>
+                          <CommandInput placeholder="Search files..." />
+                          <CommandList>
+                            <CommandEmpty>No files found.</CommandEmpty>
+                            <CommandGroup>
+                              <CommandItem
+                                value=""
+                                onSelect={() => {
+                                  setSelectedNextFile("");
+                                  setOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    selectedNextFile === ""
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  )}
+                                />
+                                Let AI choose (default)
+                              </CommandItem>
+                              {flowStatus.basic.files
+                                .filter((file) => file.status === "pending")
+                                .filter(
+                                  (file) =>
+                                    file.path !== flowStatus?.currentFile?.name
+                                )
+                                .map((file) => (
+                                  <CommandItem
+                                    key={file.path}
+                                    value={file.path}
+                                    onSelect={(currentValue) => {
+                                      setSelectedNextFile(
+                                        currentValue === selectedNextFile
+                                          ? ""
+                                          : currentValue
+                                      );
+                                      setOpen(false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        selectedNextFile === file.path
+                                          ? "opacity-100"
+                                          : "opacity-0"
+                                      )}
+                                    />
+                                    <FileText className="mr-2 h-4 w-4" />
+                                    {file.path}
+                                  </CommandItem>
+                                ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    <p className="text-xs text-gray-500">
+                      {
+                        flowStatus.basic.files
+                          .filter((f) => f.status === "pending")
+                          .filter(
+                            (f) => f.path !== flowStatus?.currentFile?.name
+                          ).length
+                      }{" "}
+                      pending files available
+                    </p>
+                  </div>
+                )}
+
                 <div className="flex gap-2">
                   <Button type="submit" disabled={disabled || !response.trim()}>
                     Submit{" "}
@@ -316,6 +447,8 @@ export function InteractionPanel({
                     onClick={() => {
                       setFeedbackMode(null);
                       setResponse("");
+                      setSelectedNextFile("");
+                      setOpen(false);
                     }}
                     disabled={disabled}
                   >

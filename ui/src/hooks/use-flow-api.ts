@@ -280,6 +280,7 @@ export const useFlowAPI = () => {
         inputData = {
           action: response.action,
           reason: response.reason || "",
+          nextFile: response.nextFile || undefined,
           ...(response.userUnderstanding && {
             userUnderstanding: response.userUnderstanding,
           }),

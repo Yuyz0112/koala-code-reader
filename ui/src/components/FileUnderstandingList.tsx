@@ -277,7 +277,7 @@ export function FileUnderstandingList({
   const renderHistoryView = () => {
     // Use global history array from backend, sort by timestamp (newest first)
     const sortedHistory = [...history].sort(
-      (a, b) => b.timestamp - a.timestamp
+      (a, b) => a.timestamp - b.timestamp
     );
 
     if (sortedHistory.length === 0) {
@@ -294,36 +294,6 @@ export function FileUnderstandingList({
 
     const formatTimestamp = (timestamp: number) => {
       return new Date(timestamp).toLocaleString();
-    };
-
-    const getActionIcon = (action: string) => {
-      switch (action) {
-        case "accept":
-          return "✅";
-        case "reject":
-          return "❌";
-        case "refine":
-          return "✏️";
-        case "finish":
-          return "🏁";
-        default:
-          return "🔄";
-      }
-    };
-
-    const getActionColor = (action: string) => {
-      switch (action) {
-        case "accept":
-          return "text-green-600 bg-green-50 border-green-200";
-        case "reject":
-          return "text-red-600 bg-red-50 border-red-200";
-        case "refine":
-          return "text-yellow-600 bg-yellow-50 border-yellow-200";
-        case "finish":
-          return "text-blue-600 bg-blue-50 border-blue-200";
-        default:
-          return "text-gray-600 bg-gray-50 border-gray-200";
-      }
     };
 
     return (
@@ -349,17 +319,6 @@ export function FileUnderstandingList({
                   {historyEntry.filePath}
                 </span>
 
-                {/* Action badge */}
-                <span
-                  className={`ml-2 px-2 py-1 text-xs rounded-full border ${getActionColor(
-                    historyEntry.feedbackAction
-                  )}`}
-                >
-                  {getActionIcon(historyEntry.feedbackAction)}{" "}
-                  {historyEntry.feedbackAction.charAt(0).toUpperCase() +
-                    historyEntry.feedbackAction.slice(1)}
-                </span>
-
                 {/* Timestamp */}
                 <div className="ml-2 flex items-center text-xs text-gray-500">
                   <Clock className="h-3 w-3 mr-1" />
@@ -374,25 +333,6 @@ export function FileUnderstandingList({
                     <Markdown className="text-sm text-gray-600">
                       {file.understanding}
                     </Markdown>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Show user feedback reason if available */}
-              {historyEntry.reason && (
-                <Card className="ml-9 mt-2 border-l-4 border-l-blue-500">
-                  <CardContent className="p-3">
-                    <div className="flex items-start gap-2">
-                      <MessageSquare className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <div className="text-xs font-medium text-blue-700 mb-1">
-                          User Feedback
-                        </div>
-                        <div className="text-sm text-blue-600">
-                          {historyEntry.reason}
-                        </div>
-                      </div>
-                    </div>
                   </CardContent>
                 </Card>
               )}

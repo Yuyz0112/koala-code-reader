@@ -191,6 +191,15 @@ export class AnalyzeFileNode extends Node {
       }
 
       return currentFileName;
+    } else if (
+      prepRes.userFeedback?.action === "refine" &&
+      prepRes.userFeedback.nextFile
+    ) {
+      // User provided refined understanding and selected a specific next file
+      console.log(
+        `[${this.runId}] AnalyzeFileNode: Processing refine feedback with user-selected next file: ${prepRes.userFeedback.nextFile}`
+      );
+      return prepRes.userFeedback.nextFile;
     } else {
       // Normal flow - use next file
       const targetFileName = prepRes.nextFile?.name;
