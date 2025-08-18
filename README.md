@@ -22,10 +22,10 @@ npm install
 Copy the example environment file and configure your API keys:
 
 ```bash
-cp .env.example .env
+cp .dev.vars.example .dev.vars
 ```
 
-Edit `.env` and add your API keys:
+Edit `.dev.vars` and add your API keys:
 
 ```env
 # Required: OpenAI API Key for AI analysis
@@ -62,7 +62,7 @@ To create a GitHub token:
 1. Go to [GitHub Settings > Personal Access Tokens](https://github.com/settings/tokens)
 2. Click "Generate new token (classic)"
 3. Select the `public_repo` scope for public repositories
-4. Copy the token and add it to your `.env` file as `GITHUB_TOKEN`
+4. Copy the token and add it to your `.dev.vars` file as `GITHUB_TOKEN`
 
 ## Usage
 

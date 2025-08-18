@@ -89,11 +89,13 @@ async function streamToText(
 
   console.log(`[LLM] Starting stream generation`);
 
-  const { textStream } = streamText({
+  const { textStream, warnings, finishReason } = streamText({
     model,
     prompt,
     temperature: 0.1,
   });
+
+  console.log(await warnings, await finishReason);
 
   for await (const textChunk of textStream) {
     chunks++;
